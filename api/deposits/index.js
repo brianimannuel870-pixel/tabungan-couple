@@ -32,31 +32,53 @@ async function handler(req, res) {
   if (req.method === 'GET') {
     const { goalId, userId } = req.query
 
-    if (goalId) {
-      const [g] = await sql`SELECT id FROM goals WHERE id = ${goalId} AND couple_id = ${coupleId} LIMIT 1`
-      if (!g) return err(res, 'Target tidak ditemukan.', 404)
+    // Gunakan query terpisah sesuai filter agar aman dari template interpolasi kosong
+    let deposits
+    if (goalId && userId) {
+      deposits = await sql`
+        SELECT
+          d.id, d.goal_id, d.type, d.amount, d.note, d.occurred_on, d.created_at,
+          d.user_id, u.name AS user_name, g.name AS goal_name, g.icon AS goal_icon
+        FROM deposits d
+        JOIN goals g ON g.id = d.goal_id
+        LEFT JOIN users u ON u.id = d.user_id
+        WHERE g.couple_id = ${coupleId} AND d.goal_id = ${goalId} AND d.user_id = ${userId}
+        ORDER BY d.occurred_on DESC, d.created_at DESC LIMIT 100
+      `
+    } else if (goalId) {
+      deposits = await sql`
+        SELECT
+          d.id, d.goal_id, d.type, d.amount, d.note, d.occurred_on, d.created_at,
+          d.user_id, u.name AS user_name, g.name AS goal_name, g.icon AS goal_icon
+        FROM deposits d
+        JOIN goals g ON g.id = d.goal_id
+        LEFT JOIN users u ON u.id = d.user_id
+        WHERE g.couple_id = ${coupleId} AND d.goal_id = ${goalId}
+        ORDER BY d.occurred_on DESC, d.created_at DESC LIMIT 100
+      `
+    } else if (userId) {
+      deposits = await sql`
+        SELECT
+          d.id, d.goal_id, d.type, d.amount, d.note, d.occurred_on, d.created_at,
+          d.user_id, u.name AS user_name, g.name AS goal_name, g.icon AS goal_icon
+        FROM deposits d
+        JOIN goals g ON g.id = d.goal_id
+        LEFT JOIN users u ON u.id = d.user_id
+        WHERE g.couple_id = ${coupleId} AND d.user_id = ${userId}
+        ORDER BY d.occurred_on DESC, d.created_at DESC LIMIT 100
+      `
+    } else {
+      deposits = await sql`
+        SELECT
+          d.id, d.goal_id, d.type, d.amount, d.note, d.occurred_on, d.created_at,
+          d.user_id, u.name AS user_name, g.name AS goal_name, g.icon AS goal_icon
+        FROM deposits d
+        JOIN goals g ON g.id = d.goal_id
+        LEFT JOIN users u ON u.id = d.user_id
+        WHERE g.couple_id = ${coupleId}
+        ORDER BY d.occurred_on DESC, d.created_at DESC LIMIT 100
+      `
     }
-
-    if (userId) {
-      const [m] = await sql`SELECT user_id FROM couple_members WHERE user_id = ${userId} AND couple_id = ${coupleId} LIMIT 1`
-      if (!m) return err(res, 'Pengguna tidak ditemukan di couple ini.', 404)
-    }
-
-    const deposits = await sql`
-      SELECT
-        d.id, d.goal_id, d.type, d.amount, d.note, d.occurred_on, d.created_at,
-        d.user_id,
-        u.name AS user_name,
-        g.name AS goal_name, g.icon AS goal_icon
-      FROM deposits d
-      JOIN goals g ON g.id = d.goal_id
-      LEFT JOIN users u ON u.id = d.user_id
-      WHERE g.couple_id = ${coupleId}
-        ${goalId ? sql`AND d.goal_id = ${goalId}` : sql``}
-        ${userId ? sql`AND d.user_id = ${userId}` : sql``}
-      ORDER BY d.occurred_on DESC, d.created_at DESC
-      LIMIT 100
-    `
 
     return ok(res, {
       deposits: deposits.map((d) => ({
