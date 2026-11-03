@@ -105,16 +105,9 @@ export default function Beranda() {
 
         {/* Progress Bar Kontribusi Pasangan */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 mb-5">
-          <div className="flex items-center justify-between mb-2.5">
-            <div className="flex items-center gap-1.5">
-              <TrendingUp size={16} className="text-rose-500" strokeWidth={2} />
-              <span className="text-xs font-semibold text-slate-900">Kontribusi Bersama</span>
-            </div>
-            {totalBoth > 0 && (
-              <span className="text-xs text-slate-400 tabular-nums">
-                Total {formatRupiah(totalBoth)}
-              </span>
-            )}
+          <div className="flex items-center gap-1.5 mb-2.5">
+            <TrendingUp size={16} className="text-rose-500" strokeWidth={2} />
+            <span className="text-xs font-semibold text-slate-900">Kontribusi Bersama</span>
           </div>
 
           {/* Bar multi-warna (segmen kiri = orang pertama, segmen kanan = orang kedua) */}
@@ -136,26 +129,16 @@ export default function Beranda() {
             {/* Orang 1 */}
             <div className="flex items-center gap-1.5 min-w-0">
               <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
-              <div className="truncate">
-                <span className="font-medium text-slate-800">
-                  {member1 ? (member1.id === user?.id ? `${member1.name} (kamu)` : member1.name) : 'Menunggu pasangan'}
-                </span>
-                <span className="text-slate-400 ml-1">
-                  · {formatRupiah(c1)} ({p1}%)
-                </span>
-              </div>
+              <span className="font-medium text-slate-800 truncate">
+                {member1 ? (member1.id === user?.id ? `${member1.name} (kamu)` : member1.name) : 'Menunggu pasangan'}
+              </span>
             </div>
 
             {/* Orang 2 */}
             <div className="flex items-center gap-1.5 min-w-0 justify-end text-right">
-              <div className="truncate">
-                <span className="font-medium text-slate-800">
-                  {member2 ? (member2.id === user?.id ? `${member2.name} (kamu)` : member2.name) : '—'}
-                </span>
-                <span className="text-slate-400 ml-1">
-                  · {formatRupiah(c2)} ({p2}%)
-                </span>
-              </div>
+              <span className="font-medium text-slate-800 truncate">
+                {member2 ? (member2.id === user?.id ? `${member2.name} (kamu)` : member2.name) : '—'}
+              </span>
               <span className="w-2.5 h-2.5 rounded-full bg-slate-300 shrink-0" />
             </div>
           </div>
