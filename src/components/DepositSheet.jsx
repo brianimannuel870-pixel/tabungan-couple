@@ -1,20 +1,35 @@
-// src/components/DepositSheet.jsx — modal bottom sheet setor / tarik dengan micro animation buka & tutup
+// src/components/DepositSheet.jsx — modal bottom sheet setor / tarik dengan real-time date picker lokal
 import { useState, useEffect, useCallback } from 'react'
-import { X, Loader2 } from 'lucide-react'
+import { X, Loader2, Calendar } from 'lucide-react'
 import { api } from '../lib/api.js'
-import { formatRupiah } from '../lib/format.js'
+import { formatRupiah, formatTanggal } from '../lib/format.js'
+
+// Dapatkan string tanggal lokal YYYY-MM-DD (bukan UTC)
+function getTodayLocalDate() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
 export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId }) {
+  const todayStr = getTodayLocalDate()
   const [tab, setTab] = useState('setor')
   const [form, setForm] = useState({
     goalId: defaultGoalId ?? goals[0]?.id ?? '',
     amount: '',
     note: '',
-    occurredOn: new Date().toISOString().split('T')[0],
+    occurredOn: todayStr,
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
+
+  // Pastikan tanggal selalu ter-update ke real-time hari ini saat modal terbuka
+  useEffect(() => {
+    setForm((f) => ({ ...f, occurredOn: getTodayLocalDate() }))
+  }, [])
 
   const handleClose = useCallback(() => {
     setIsClosing(true)
@@ -48,7 +63,7 @@ export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId })
         type: tab,
         amount,
         note: form.note.trim() || null,
-        occurredOn: form.occurredOn,
+        occurredOn: form.occurredOn || todayStr,
       })
       onSaved(data.deposit)
       handleClose()
@@ -59,6 +74,7 @@ export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId })
   }
 
   const selectedGoal = goals.find((g) => g.id === form.goalId)
+  const isToday = form.occurredOn === todayStr
 
   return (
     <>
@@ -164,17 +180,41 @@ export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId })
             </div>
           </div>
 
-          {/* Tanggal */}
+          {/* Tanggal (Real-time Date Picker dengan badge status Hari Ini) */}
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="dep-date" className="text-sm font-medium text-slate-700">Tanggal</label>
+            <div className="flex items-center justify-between">
+              <label htmlFor="dep-date" className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
+                <Calendar size={15} className="text-rose-500" />
+                Tanggal Transaksi
+              </label>
+              {isToday ? (
+                <span className="text-[11px] font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">
+                  Hari ini
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, occurredOn: todayStr }))}
+                  className="text-[11px] text-rose-500 hover:underline font-medium"
+                >
+                  Set ke hari ini
+                </button>
+              )}
+            </div>
+
             <input
               id="dep-date"
               name="occurredOn"
               type="date"
+              required
               value={form.occurredOn}
               onChange={handleChange}
-              className="h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent min-h-[3rem]"
+              max={todayStr}
+              className="h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent min-h-[3rem] w-full"
             />
+            <p className="text-xs text-slate-400 pl-1">
+              {formatTanggal(form.occurredOn)}
+            </p>
           </div>
 
           {/* Catatan */}
