@@ -1,9 +1,9 @@
-// GET /api/auth/me — cek sesi + apakah sudah punya couple
+// GET /api/auth/me
 import { sql } from '../_lib/db.js'
 import { requireAuth } from '../_lib/auth.js'
-import { ok, err, methodNotAllowed } from '../_lib/http.js'
+import { ok, err, methodNotAllowed, withErrorHandler } from '../_lib/http.js'
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET'])
 
   const payload = await requireAuth(req, res)
@@ -30,3 +30,4 @@ export default async function handler(req, res) {
   })
 }
 
+export default withErrorHandler(handler)

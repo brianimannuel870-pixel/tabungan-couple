@@ -1,9 +1,8 @@
-// GET  /api/deposits — riwayat semua deposit couple (filter opsional)
-// POST /api/deposits — catat setoran/penarikan baru
+// api/deposits/index.js
 import { z } from 'zod'
 import { sql } from '../_lib/db.js'
 import { requireAuth } from '../_lib/auth.js'
-import { ok, err, methodNotAllowed } from '../_lib/http.js'
+import { ok, err, methodNotAllowed, withErrorHandler } from '../_lib/http.js'
 
 async function getCoupleId(userId) {
   const [row] = await sql`
@@ -20,27 +19,24 @@ const createSchema = z.object({
     .int('Nominal harus bilangan bulat.')
     .positive('Nominal harus lebih dari 0.'),
   note: z.string().max(200, 'Catatan maksimal 200 karakter.').nullable().optional(),
-  occurredOn: z.string().optional(), // format YYYY-MM-DD
+  occurredOn: z.string().optional(),
 })
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   const payload = await requireAuth(req, res)
   if (!payload) return err(res, 'Tidak terautentikasi.', 401)
 
   const coupleId = await getCoupleId(payload.sub)
   if (!coupleId) return err(res, 'Kamu belum bergabung di Ruang Couple.', 403)
 
-  // ── GET ──────────────────────────────────────────────────────────────────
   if (req.method === 'GET') {
     const { goalId, userId } = req.query
 
-    // Pastikan goalId (jika ada) milik couple ini
     if (goalId) {
       const [g] = await sql`SELECT id FROM goals WHERE id = ${goalId} AND couple_id = ${coupleId} LIMIT 1`
       if (!g) return err(res, 'Target tidak ditemukan.', 404)
     }
 
-    // Pastikan userId (jika ada) adalah anggota couple ini
     if (userId) {
       const [m] = await sql`SELECT user_id FROM couple_members WHERE user_id = ${userId} AND couple_id = ${coupleId} LIMIT 1`
       if (!m) return err(res, 'Pengguna tidak ditemukan di couple ini.', 404)
@@ -79,20 +75,17 @@ export default async function handler(req, res) {
     })
   }
 
-  // ── POST ─────────────────────────────────────────────────────────────────
   if (req.method === 'POST') {
     const parsed = createSchema.safeParse(req.body)
     if (!parsed.success) return err(res, parsed.error.errors[0].message)
 
     const { goalId, type, amount, note, occurredOn } = parsed.data
 
-    // Pastikan goal milik couple ini
     const [goal] = await sql`
       SELECT id FROM goals WHERE id = ${goalId} AND couple_id = ${coupleId} LIMIT 1
     `
     if (!goal) return err(res, 'Target tidak ditemukan.', 404)
 
-    // Validasi penarikan tidak melebihi saldo
     if (type === 'tarik') {
       const [bal] = await sql`
         SELECT COALESCE(balance, 0) AS balance FROM goal_balances WHERE goal_id = ${goalId}
@@ -128,3 +121,4 @@ export default async function handler(req, res) {
   return methodNotAllowed(res, ['GET', 'POST'])
 }
 
+export default withErrorHandler(handler)

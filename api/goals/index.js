@@ -1,9 +1,8 @@
-// GET /api/goals — daftar target couple + saldo
-// POST /api/goals — buat target baru
+// api/goals/index.js
 import { z } from 'zod'
 import { sql } from '../_lib/db.js'
 import { requireAuth } from '../_lib/auth.js'
-import { ok, err, methodNotAllowed } from '../_lib/http.js'
+import { ok, err, methodNotAllowed, withErrorHandler } from '../_lib/http.js'
 
 async function getCoupleId(userId) {
   const [row] = await sql`
@@ -22,7 +21,7 @@ const createSchema = z.object({
   icon: z.string().max(10).nullable().optional(),
 })
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   const payload = await requireAuth(req, res)
   if (!payload) return err(res, 'Tidak terautentikasi.', 401)
 
@@ -84,3 +83,4 @@ export default async function handler(req, res) {
   return methodNotAllowed(res, ['GET', 'POST'])
 }
 
+export default withErrorHandler(handler)
