@@ -1,11 +1,11 @@
-// src/components/BottomNav.jsx — navigasi bawah dengan tombol aksi di tengah
+// src/components/BottomNav.jsx — navigasi bawah dengan tombol aksi di tengah (50% protruding, no shadow, rounded border)
 import { NavLink } from 'react-router-dom'
 import { Home, Target, History, User, Plus } from 'lucide-react'
 
 export default function BottomNav({ onAddClick, hasGoals }) {
   return (
     <nav className="fixed bottom-0 inset-x-0 bg-white/90 backdrop-blur border-t border-slate-200 pb-[env(safe-area-inset-bottom)] z-30">
-      <div className="mx-auto max-w-md flex items-center h-16 px-2">
+      <div className="relative mx-auto max-w-md flex items-center h-16 px-2">
         {/* 1. Beranda */}
         <NavLink
           to="/"
@@ -33,15 +33,15 @@ export default function BottomNav({ onAddClick, hasGoals }) {
           <span className="text-[10px] font-medium">Target</span>
         </NavLink>
 
-        {/* 3. Tombol Tengah (FAB Setor) */}
-        <div className="flex-1 flex items-center justify-center">
+        {/* 3. Tombol Tengah (FAB Setor) — 50% protruding di atas garis navbar, no shadow, rounded */}
+        <div className="relative flex-1 flex items-center justify-center h-full">
           <button
             onClick={onAddClick}
             disabled={!hasGoals}
-            className="w-12 h-12 -mt-5 rounded-full bg-rose-500 text-white shadow-lg flex items-center justify-center active:scale-95 transition disabled:opacity-40 disabled:cursor-not-allowed border-4 border-white"
+            className="absolute top-0 -translate-y-1/2 w-14 h-14 rounded-full bg-rose-500 text-white flex items-center justify-center active:scale-95 transition disabled:opacity-40 disabled:cursor-not-allowed border-4 border-white"
             aria-label="Catat setoran atau penarikan"
           >
-            <Plus size={22} strokeWidth={2.5} />
+            <Plus size={24} strokeWidth={2.5} />
           </button>
         </div>
 
