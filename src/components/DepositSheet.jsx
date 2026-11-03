@@ -1,5 +1,5 @@
-// src/components/DepositSheet.jsx — modal bottom sheet setor / tarik
-import { useState, useEffect } from 'react'
+// src/components/DepositSheet.jsx — modal bottom sheet setor / tarik dengan micro animation buka & tutup
+import { useState, useEffect, useCallback } from 'react'
 import { X, Loader2 } from 'lucide-react'
 import { api } from '../lib/api.js'
 import { formatRupiah } from '../lib/format.js'
@@ -14,12 +14,20 @@ export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId })
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isClosing, setIsClosing] = useState(false)
+
+  const handleClose = useCallback(() => {
+    setIsClosing(true)
+    setTimeout(() => {
+      onClose()
+    }, 200) // durasi animasi keluar
+  }, [onClose])
 
   useEffect(() => {
-    function onKey(e) { if (e.key === 'Escape') onClose() }
+    function onKey(e) { if (e.key === 'Escape') handleClose() }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [handleClose])
 
   function handleChange(e) {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
@@ -43,10 +51,9 @@ export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId })
         occurredOn: form.occurredOn,
       })
       onSaved(data.deposit)
-      onClose()
+      handleClose()
     } catch (e) {
       setError(e.message)
-    } finally {
       setLoading(false)
     }
   }
@@ -55,15 +62,30 @@ export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId })
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} aria-hidden />
-      <div className="sheet fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] max-h-[90dvh] overflow-y-auto">
+      {/* Overlay Backdrop dengan animasi Fade */}
+      <div
+        className={`fixed inset-0 bg-black/40 z-40 transition-opacity duration-200 ${
+          isClosing ? 'opacity-0' : 'opacity-100 animate-fade-in'
+        }`}
+        onClick={handleClose}
+        aria-hidden
+      />
+
+      {/* Sheet Modal dengan animasi Slide Up / Down */}
+      <div
+        className={`sheet fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] max-h-[90dvh] overflow-y-auto transition-transform duration-200 ease-out ${
+          isClosing
+            ? 'translate-y-full'
+            : 'translate-y-0 animate-sheet-up'
+        }`}
+      >
         <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-5" />
 
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-semibold text-slate-900">Catat Transaksi</h2>
           <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100"
+            onClick={handleClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 transition"
             aria-label="Tutup"
           >
             <X size={18} />
@@ -187,4 +209,3 @@ export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId })
     </>
   )
 }
-

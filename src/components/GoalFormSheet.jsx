@@ -1,5 +1,5 @@
-// src/components/GoalFormSheet.jsx — bottom sheet buat/ubah target
-import { useState, useEffect } from 'react'
+// src/components/GoalFormSheet.jsx — bottom sheet buat/ubah target dengan animasi buka & tutup
+import { useState, useEffect, useCallback } from 'react'
 import { X, Loader2 } from 'lucide-react'
 
 const EMOJI_OPTIONS = ['🎯','🏠','✈️','💍','🎓','🚗','📱','👶','🐶','🌴','💰','🎮']
@@ -15,13 +15,21 @@ export default function GoalFormSheet({ goal, onClose, onSave }) {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isClosing, setIsClosing] = useState(false)
+
+  const handleClose = useCallback(() => {
+    setIsClosing(true)
+    setTimeout(() => {
+      onClose()
+    }, 200)
+  }, [onClose])
 
   // Tutup dengan Escape
   useEffect(() => {
-    function onKey(e) { if (e.key === 'Escape') onClose() }
+    function onKey(e) { if (e.key === 'Escape') handleClose() }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [handleClose])
 
   function handleChange(e) {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
@@ -43,25 +51,32 @@ export default function GoalFormSheet({ goal, onClose, onSave }) {
         deadline: form.deadline || null,
         icon: form.icon || null,
       })
-      onClose()
+      handleClose()
     } catch (e) {
       setError(e.message)
-    } finally {
       setLoading(false)
     }
   }
 
   return (
     <>
-      {/* Overlay */}
+      {/* Overlay Backdrop dengan animasi Fade */}
       <div
-        className="fixed inset-0 bg-black/40 z-40"
-        onClick={onClose}
+        className={`fixed inset-0 bg-black/40 z-40 transition-opacity duration-200 ${
+          isClosing ? 'opacity-0' : 'opacity-100 animate-fade-in'
+        }`}
+        onClick={handleClose}
         aria-hidden
       />
 
-      {/* Sheet */}
-      <div className="sheet fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] max-h-[90dvh] overflow-y-auto">
+      {/* Sheet Modal dengan animasi Slide Up / Down */}
+      <div
+        className={`sheet fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] max-h-[90dvh] overflow-y-auto transition-transform duration-200 ease-out ${
+          isClosing
+            ? 'translate-y-full'
+            : 'translate-y-0 animate-sheet-up'
+        }`}
+      >
         {/* Handle bar */}
         <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-5" />
 
@@ -70,8 +85,8 @@ export default function GoalFormSheet({ goal, onClose, onSave }) {
             {isEdit ? 'Ubah Target' : 'Buat Target Baru'}
           </h2>
           <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100"
+            onClick={handleClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 transition"
             aria-label="Tutup"
           >
             <X size={18} />
@@ -178,4 +193,3 @@ export default function GoalFormSheet({ goal, onClose, onSave }) {
     </>
   )
 }
-

@@ -1,4 +1,4 @@
-// src/components/BottomNav.jsx — navigasi bawah dengan tombol aksi di tengah (50% protruding, no shadow, rounded border)
+// src/components/BottomNav.jsx — navigasi bawah dengan tombol aksi bulat circle sempurna di tengah
 import { NavLink } from 'react-router-dom'
 import { Home, Target, History, User, Plus } from 'lucide-react'
 
@@ -33,12 +33,13 @@ export default function BottomNav({ onAddClick, hasGoals }) {
           <span className="text-[10px] font-medium">Target</span>
         </NavLink>
 
-        {/* 3. Tombol Tengah (FAB Setor) — 50% protruding di atas garis navbar, no shadow, rounded */}
+        {/* 3. Tombol Tengah (FAB Setor) — 50% protruding, bulat circle murni */}
         <div className="relative flex-1 flex items-center justify-center h-full">
           <button
             onClick={onAddClick}
             disabled={!hasGoals}
-            className="absolute top-0 -translate-y-1/2 w-14 h-14 rounded-full bg-rose-500 text-white flex items-center justify-center active:scale-95 transition disabled:opacity-40 disabled:cursor-not-allowed border-4 border-white"
+            className="absolute top-0 -translate-y-1/2 w-14 h-14 aspect-square !rounded-full bg-rose-500 text-white flex items-center justify-center active:scale-95 transition disabled:opacity-40 disabled:cursor-not-allowed border-4 border-white shrink-0"
+            style={{ borderRadius: '9999px' }}
             aria-label="Catat setoran atau penarikan"
           >
             <Plus size={24} strokeWidth={2.5} />
