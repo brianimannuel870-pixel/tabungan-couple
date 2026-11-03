@@ -8,6 +8,16 @@ async function request(path, options = {}) {
     ...options,
   })
 
+  // Cek Content-Type sebelum parse JSON
+  const contentType = res.headers.get('content-type') ?? ''
+  if (!contentType.includes('application/json')) {
+    // Server mengembalikan non-JSON (HTML error page, dsb.)
+    const text = await res.text()
+    const error = new Error(`Server error (${res.status}): ${text.slice(0, 120)}`)
+    error.status = res.status
+    throw error
+  }
+
   const data = await res.json()
 
   if (!res.ok) {
@@ -25,4 +35,3 @@ export const api = {
   put: (path, body) => request(path, { method: 'PUT', body: JSON.stringify(body) }),
   delete: (path) => request(path, { method: 'DELETE' }),
 }
-
