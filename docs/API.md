@@ -33,7 +33,7 @@ Kecuali dinyatakan **Publik**, semua endpoint butuh login (401 jika tidak). Endp
 ## Deposits
 | Method & Path | Body / Query | Respons |
 |---|---|---|
-| `GET /deposits` | `?goal_id=&user_id=&limit=&offset=` | 200 `{ deposits: [{ id, goal_id, goal_name, user_id, user_name, type, amount, note, occurred_on }] }` |
+| `GET /deposits` | `?goalId=&userId=&page=1&limit=10` | 200 `{ deposits: [...], pagination: { page, limit, total, totalPages, hasNext, hasPrev } }` |
 | `POST /deposits` | `{ goal_id, type, amount, note?, occurred_on? }` | 201 `{ deposit }`; 400 jika penarikan melebihi saldo |
 | `DELETE /deposits/:id` | — | 200 `{ ok: true }`; 403 jika bukan pembuat |
 
