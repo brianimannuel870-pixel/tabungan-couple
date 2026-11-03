@@ -4,7 +4,7 @@
 import { z } from 'zod'
 import { sql } from '../_lib/db.js'
 import { requireAuth } from '../_lib/auth.js'
-import { ok, err, methodNotAllowed } from '../_lib/http.js'
+import { ok, err, methodNotAllowed, withErrorHandler } from '../_lib/http.js'
 
 async function getCoupleId(userId) {
   const [row] = await sql`
@@ -20,18 +20,16 @@ const updateSchema = z.object({
   icon: z.string().max(10).nullable().optional(),
 })
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   const payload = await requireAuth(req, res)
   if (!payload) return err(res, 'Tidak terautentikasi.', 401)
 
   const coupleId = await getCoupleId(payload.sub)
   if (!coupleId) return err(res, 'Kamu belum bergabung di Ruang Couple.', 403)
 
-  // Vercel menaruh param di req.query
   const { id } = req.query
   if (!id) return err(res, 'ID goal diperlukan.', 400)
 
-  // Pastikan goal milik couple ini
   const [goal] = await sql`
     SELECT id, name, target_amount, deadline, icon, created_at
     FROM goals
@@ -46,7 +44,6 @@ export default async function handler(req, res) {
     `
     const balance = Number(balRow?.balance ?? 0)
 
-    // Kontribusi per anggota
     const contribs = await sql`
       SELECT
         u.id AS user_id, u.name,
@@ -58,7 +55,6 @@ export default async function handler(req, res) {
       GROUP BY u.id, u.name
     `
 
-    // Riwayat setoran
     const deposits = await sql`
       SELECT
         d.id, d.type, d.amount, d.note, d.occurred_on, d.created_at,
@@ -134,3 +130,4 @@ export default async function handler(req, res) {
   return methodNotAllowed(res, ['GET', 'PUT', 'DELETE'])
 }
 
+export default withErrorHandler(handler)

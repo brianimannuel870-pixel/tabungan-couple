@@ -1,7 +1,7 @@
 // DELETE /api/deposits/:id — hapus catatan (hanya pembuat)
 import { sql } from '../_lib/db.js'
 import { requireAuth } from '../_lib/auth.js'
-import { ok, err, methodNotAllowed } from '../_lib/http.js'
+import { ok, err, methodNotAllowed, withErrorHandler } from '../_lib/http.js'
 
 async function getCoupleId(userId) {
   const [row] = await sql`
@@ -10,7 +10,7 @@ async function getCoupleId(userId) {
   return row?.couple_id ?? null
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'DELETE') return methodNotAllowed(res, ['DELETE'])
 
   const payload = await requireAuth(req, res)
@@ -22,7 +22,6 @@ export default async function handler(req, res) {
   const { id } = req.query
   if (!id) return err(res, 'ID deposit diperlukan.', 400)
 
-  // Cek deposit milik user ini dan goalnya milik couple ini
   const [deposit] = await sql`
     SELECT d.id, d.user_id
     FROM deposits d
@@ -40,3 +39,4 @@ export default async function handler(req, res) {
   ok(res, { message: 'Catatan berhasil dihapus.' })
 }
 
+export default withErrorHandler(handler)
