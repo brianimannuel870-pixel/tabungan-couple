@@ -1,12 +1,11 @@
-// src/components/AppShell.jsx — layout dengan BottomNav + FAB + Toast
+// src/components/AppShell.jsx — layout dengan BottomNav terintegrasi FAB tengah + Toast
 import { useState, useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
 import BottomNav from './BottomNav.jsx'
-import FAB from './FAB.jsx'
 import DepositSheet from './DepositSheet.jsx'
 import Toast from './Toast.jsx'
 
-// Rute yang menampilkan bottom nav + FAB
+// Rute yang menampilkan bottom nav
 const SHELL_ROUTES = ['/', '/target', '/riwayat', '/profil']
 
 export default function AppShell({ children, goals, onDepositSaved }) {
@@ -20,7 +19,10 @@ export default function AppShell({ children, goals, onDepositSaved }) {
 
   const handleSaved = useCallback((deposit) => {
     onDepositSaved?.(deposit)
-    setToast({ message: deposit.type === 'setor' ? 'Setoran tercatat!' : 'Penarikan tercatat!', type: 'success' })
+    setToast({
+      message: deposit.type === 'setor' ? 'Setoran tercatat!' : 'Penarikan tercatat!',
+      type: 'success',
+    })
   }, [onDepositSaved])
 
   if (!showShell) return children
@@ -28,10 +30,10 @@ export default function AppShell({ children, goals, onDepositSaved }) {
   return (
     <>
       {children}
-      <BottomNav />
-      {goals?.length > 0 && (
-        <FAB onClick={() => setShowDeposit(true)} />
-      )}
+      <BottomNav
+        hasGoals={goals?.length > 0}
+        onAddClick={() => setShowDeposit(true)}
+      />
       {showDeposit && goals && (
         <DepositSheet
           goals={goals}
@@ -49,4 +51,3 @@ export default function AppShell({ children, goals, onDepositSaved }) {
     </>
   )
 }
-
