@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+/* ===== Tipografi ===== */
+@theme {
+  --font-sans: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
+}
+
+/* ===== CSS dasar Safari iOS ===== */
+html,
+body {
+  -webkit-text-size-adjust: 100%;
+  font-family: var(--font-sans);
+}
+
+/* Semua kontrol form: font-size 16px agar Safari iOS tidak auto-zoom */
+input,
+select,
+textarea,
+button {
+  font-size: 16px;
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 0.75rem; /* rounded-xl */
+}
+
+/* Scroll container agar overscroll tidak bocor ke body */
+.sheet,
+.scroll-area {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Angka nominal — lebar tetap agar tidak loncat */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
