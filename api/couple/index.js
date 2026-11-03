@@ -1,9 +1,9 @@
-// GET /api/couple — info couple + kedua anggota
+// GET /api/couple — info couple + kedua anggota + total kontribusi
 import { sql } from '../_lib/db.js'
 import { requireAuth } from '../_lib/auth.js'
-import { ok, err, methodNotAllowed } from '../_lib/http.js'
+import { ok, err, methodNotAllowed, withErrorHandler } from '../_lib/http.js'
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET'])
 
   const payload = await requireAuth(req, res)
@@ -11,7 +11,6 @@ export default async function handler(req, res) {
 
   const userId = payload.sub
 
-  // Ambil couple_id milik user (otorisasi berbasis keanggotaan)
   const [membership] = await sql`
     SELECT couple_id FROM couple_members WHERE user_id = ${userId} LIMIT 1
   `
@@ -23,11 +22,20 @@ export default async function handler(req, res) {
     SELECT id, invite_code, created_at FROM couples WHERE id = ${coupleId}
   `
 
+  // Hitung total kontribusi bersih per anggota across all goals
   const members = await sql`
-    SELECT u.id, u.name, u.email, cm.joined_at
+    SELECT
+      u.id, u.name, u.email, cm.joined_at,
+      COALESCE(
+        SUM(CASE WHEN d.type = 'setor' THEN d.amount ELSE -d.amount END),
+        0
+      )::bigint AS total_contributed
     FROM couple_members cm
     JOIN users u ON u.id = cm.user_id
+    LEFT JOIN deposits d ON d.user_id = u.id
+      AND d.goal_id IN (SELECT id FROM goals WHERE couple_id = ${coupleId})
     WHERE cm.couple_id = ${coupleId}
+    GROUP BY u.id, u.name, u.email, cm.joined_at
     ORDER BY cm.joined_at ASC
   `
 
@@ -41,8 +49,10 @@ export default async function handler(req, res) {
         name: m.name,
         email: m.email,
         joinedAt: m.joined_at,
+        totalContributed: Math.max(0, Number(m.total_contributed)),
       })),
     },
   })
 }
 
+export default withErrorHandler(handler)

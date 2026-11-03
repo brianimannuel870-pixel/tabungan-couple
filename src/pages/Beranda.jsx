@@ -1,7 +1,7 @@
-// src/pages/Beranda.jsx — total tabungan, ringkasan target, 10 aktivitas terbaru
+// src/pages/Beranda.jsx — total tabungan, progress bar kontribusi, ringkasan target, 10 aktivitas
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { PiggyBank, ChevronRight, Loader2 } from 'lucide-react'
+import { PiggyBank, ChevronRight, Loader2, TrendingUp } from 'lucide-react'
 import { api } from '../lib/api.js'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { formatRupiah, formatTanggalPendek } from '../lib/format.js'
@@ -26,18 +26,21 @@ export default function Beranda() {
   const { user } = useAuth()
   const [goals, setGoals] = useState([])
   const [deposits, setDeposits] = useState([])
+  const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
     async function load() {
       try {
-        const [gData, dData] = await Promise.all([
+        const [gData, dData, cData] = await Promise.all([
           api.get('/goals'),
           api.get('/deposits?limit=10'),
+          api.get('/couple'),
         ])
-        setGoals(gData.goals)
+        setGoals(gData.goals ?? [])
         setDeposits(dData.deposits ?? [])
+        setMembers(cData.couple?.members ?? [])
       } catch (e) {
         setError(e.message)
       } finally {
@@ -48,6 +51,16 @@ export default function Beranda() {
   }, [])
 
   const totalTabungan = goals.reduce((s, g) => s + g.balance, 0)
+
+  // Hitung kontribusi total kedua anggota
+  const member1 = members[0]
+  const member2 = members[1]
+  const c1 = member1?.totalContributed ?? 0
+  const c2 = member2?.totalContributed ?? 0
+  const totalBoth = c1 + c2
+
+  const p1 = totalBoth > 0 ? Math.round((c1 / totalBoth) * 100) : 50
+  const p2 = totalBoth > 0 ? 100 - p1 : 50
 
   const topGoals = [...goals]
     .sort((a, b) => {
@@ -76,19 +89,76 @@ export default function Beranda() {
         </div>
 
         {/* Total tabungan */}
-        <div className="bg-rose-500 rounded-2xl p-5 mb-5 text-white">
+        <div className="bg-rose-500 rounded-2xl p-5 mb-3 text-white shadow-sm">
           <p className="text-sm opacity-80 mb-1">Total Tabungan</p>
-          {loading
-            ? <div className="h-9 bg-white/20 rounded-xl animate-pulse w-48" />
-            : (
-              <p className="text-3xl font-bold tabular-nums tracking-tight">
-                {formatRupiah(totalTabungan)}
-              </p>
-            )
-          }
+          {loading ? (
+            <div className="h-9 bg-white/20 rounded-xl animate-pulse w-48" />
+          ) : (
+            <p className="text-3xl font-bold tabular-nums tracking-tight">
+              {formatRupiah(totalTabungan)}
+            </p>
+          )}
           <p className="text-xs opacity-70 mt-1">
             {goals.length} target aktif
           </p>
+        </div>
+
+        {/* Progress Bar Kontribusi Pasangan */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 mb-5">
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center gap-1.5">
+              <TrendingUp size={16} className="text-rose-500" strokeWidth={2} />
+              <span className="text-xs font-semibold text-slate-900">Kontribusi Bersama</span>
+            </div>
+            {totalBoth > 0 && (
+              <span className="text-xs text-slate-400 tabular-nums">
+                Total {formatRupiah(totalBoth)}
+              </span>
+            )}
+          </div>
+
+          {/* Bar multi-warna (segmen kiri = orang pertama, segmen kanan = orang kedua) */}
+          <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden flex">
+            <div
+              className="bg-rose-500 h-full transition-all duration-500"
+              style={{ width: `${p1}%` }}
+              title={`${member1?.name ?? 'Anggota 1'}: ${p1}%`}
+            />
+            <div
+              className="bg-slate-300 h-full transition-all duration-500"
+              style={{ width: `${p2}%` }}
+              title={`${member2?.name ?? 'Anggota 2'}: ${p2}%`}
+            />
+          </div>
+
+          {/* Label dua kolom bawah bar */}
+          <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100 text-xs">
+            {/* Orang 1 */}
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
+              <div className="truncate">
+                <span className="font-medium text-slate-800">
+                  {member1 ? (member1.id === user?.id ? `${member1.name} (kamu)` : member1.name) : 'Menunggu pasangan'}
+                </span>
+                <span className="text-slate-400 ml-1">
+                  · {formatRupiah(c1)} ({p1}%)
+                </span>
+              </div>
+            </div>
+
+            {/* Orang 2 */}
+            <div className="flex items-center gap-1.5 min-w-0 justify-end text-right">
+              <div className="truncate">
+                <span className="font-medium text-slate-800">
+                  {member2 ? (member2.id === user?.id ? `${member2.name} (kamu)` : member2.name) : '—'}
+                </span>
+                <span className="text-slate-400 ml-1">
+                  · {formatRupiah(c2)} ({p2}%)
+                </span>
+              </div>
+              <span className="w-2.5 h-2.5 rounded-full bg-slate-300 shrink-0" />
+            </div>
+          </div>
         </div>
 
         {/* Error */}
