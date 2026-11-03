@@ -1,4 +1,4 @@
-// src/pages/Beranda.jsx — total tabungan, ringkasan target, 5 aktivitas terbaru
+// src/pages/Beranda.jsx — total tabungan, ringkasan target, 10 aktivitas terbaru
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { PiggyBank, ChevronRight, Loader2 } from 'lucide-react'
@@ -34,10 +34,10 @@ export default function Beranda() {
       try {
         const [gData, dData] = await Promise.all([
           api.get('/goals'),
-          api.get('/deposits'),
+          api.get('/deposits?limit=10'),
         ])
         setGoals(gData.goals)
-        setDeposits(dData.deposits.slice(0, 5))
+        setDeposits(dData.deposits ?? [])
       } catch (e) {
         setError(e.message)
       } finally {
@@ -49,7 +49,6 @@ export default function Beranda() {
 
   const totalTabungan = goals.reduce((s, g) => s + g.balance, 0)
 
-  // 3 target: belum selesai diutamakan, lalu terdekat tenggat
   const topGoals = [...goals]
     .sort((a, b) => {
       if (a.isDone !== b.isDone) return a.isDone ? 1 : -1
@@ -154,7 +153,7 @@ export default function Beranda() {
           )}
         </div>
 
-        {/* 5 Aktivitas terbaru */}
+        {/* 10 Aktivitas terbaru */}
         {!loading && deposits.length > 0 && (
           <div>
             <div className="flex items-center justify-between mb-3">

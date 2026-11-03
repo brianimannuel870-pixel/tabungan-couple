@@ -31,10 +31,19 @@ async function handler(req, res) {
 
   if (req.method === 'GET') {
     const { goalId, userId } = req.query
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1)
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 10))
+    const offset = (page - 1) * limit
 
-    // Gunakan query terpisah sesuai filter agar aman dari template interpolasi kosong
     let deposits
+    let countResult
+
     if (goalId && userId) {
+      countResult = await sql`
+        SELECT COUNT(*)::int AS total FROM deposits d
+        JOIN goals g ON g.id = d.goal_id
+        WHERE g.couple_id = ${coupleId} AND d.goal_id = ${goalId} AND d.user_id = ${userId}
+      `
       deposits = await sql`
         SELECT
           d.id, d.goal_id, d.type, d.amount, d.note, d.occurred_on, d.created_at,
@@ -43,9 +52,15 @@ async function handler(req, res) {
         JOIN goals g ON g.id = d.goal_id
         LEFT JOIN users u ON u.id = d.user_id
         WHERE g.couple_id = ${coupleId} AND d.goal_id = ${goalId} AND d.user_id = ${userId}
-        ORDER BY d.occurred_on DESC, d.created_at DESC LIMIT 100
+        ORDER BY d.occurred_on DESC, d.created_at DESC
+        LIMIT ${limit} OFFSET ${offset}
       `
     } else if (goalId) {
+      countResult = await sql`
+        SELECT COUNT(*)::int AS total FROM deposits d
+        JOIN goals g ON g.id = d.goal_id
+        WHERE g.couple_id = ${coupleId} AND d.goal_id = ${goalId}
+      `
       deposits = await sql`
         SELECT
           d.id, d.goal_id, d.type, d.amount, d.note, d.occurred_on, d.created_at,
@@ -54,9 +69,15 @@ async function handler(req, res) {
         JOIN goals g ON g.id = d.goal_id
         LEFT JOIN users u ON u.id = d.user_id
         WHERE g.couple_id = ${coupleId} AND d.goal_id = ${goalId}
-        ORDER BY d.occurred_on DESC, d.created_at DESC LIMIT 100
+        ORDER BY d.occurred_on DESC, d.created_at DESC
+        LIMIT ${limit} OFFSET ${offset}
       `
     } else if (userId) {
+      countResult = await sql`
+        SELECT COUNT(*)::int AS total FROM deposits d
+        JOIN goals g ON g.id = d.goal_id
+        WHERE g.couple_id = ${coupleId} AND d.user_id = ${userId}
+      `
       deposits = await sql`
         SELECT
           d.id, d.goal_id, d.type, d.amount, d.note, d.occurred_on, d.created_at,
@@ -65,9 +86,15 @@ async function handler(req, res) {
         JOIN goals g ON g.id = d.goal_id
         LEFT JOIN users u ON u.id = d.user_id
         WHERE g.couple_id = ${coupleId} AND d.user_id = ${userId}
-        ORDER BY d.occurred_on DESC, d.created_at DESC LIMIT 100
+        ORDER BY d.occurred_on DESC, d.created_at DESC
+        LIMIT ${limit} OFFSET ${offset}
       `
     } else {
+      countResult = await sql`
+        SELECT COUNT(*)::int AS total FROM deposits d
+        JOIN goals g ON g.id = d.goal_id
+        WHERE g.couple_id = ${coupleId}
+      `
       deposits = await sql`
         SELECT
           d.id, d.goal_id, d.type, d.amount, d.note, d.occurred_on, d.created_at,
@@ -76,9 +103,13 @@ async function handler(req, res) {
         JOIN goals g ON g.id = d.goal_id
         LEFT JOIN users u ON u.id = d.user_id
         WHERE g.couple_id = ${coupleId}
-        ORDER BY d.occurred_on DESC, d.created_at DESC LIMIT 100
+        ORDER BY d.occurred_on DESC, d.created_at DESC
+        LIMIT ${limit} OFFSET ${offset}
       `
     }
+
+    const total = countResult[0]?.total ?? 0
+    const totalPages = Math.ceil(total / limit)
 
     return ok(res, {
       deposits: deposits.map((d) => ({
@@ -94,6 +125,14 @@ async function handler(req, res) {
         userId: d.user_id,
         userName: d.user_name,
       })),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
     })
   }
 
