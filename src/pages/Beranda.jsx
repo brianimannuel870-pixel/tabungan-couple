@@ -1,7 +1,7 @@
 // src/pages/Beranda.jsx — total tabungan, progress bar kontribusi, ringkasan target, 10 aktivitas
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { PiggyBank, ChevronRight, Loader2, TrendingUp } from 'lucide-react'
+import { PiggyBank, ChevronRight, Loader2 } from 'lucide-react'
 import { api } from '../lib/api.js'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { formatRupiah, formatTanggalPendek } from '../lib/format.js'
@@ -88,58 +88,56 @@ export default function Beranda() {
           <PiggyBank size={24} className="ml-auto text-rose-400" strokeWidth={1.75} />
         </div>
 
-        {/* Total tabungan */}
-        <div className="bg-rose-500 rounded-2xl p-5 mb-3 text-white shadow-sm">
-          <p className="text-sm opacity-80 mb-1">Total Tabungan</p>
-          {loading ? (
-            <div className="h-9 bg-white/20 rounded-xl animate-pulse w-48" />
-          ) : (
-            <p className="text-3xl font-bold tabular-nums tracking-tight">
-              {formatRupiah(totalTabungan)}
+        {/* Total tabungan + Kontribusi terintegrasi */}
+        <div className="bg-rose-500 rounded-2xl p-5 mb-5 text-white shadow-sm flex flex-col gap-4">
+          <div>
+            <p className="text-sm opacity-80 mb-1">Total Tabungan</p>
+            {loading ? (
+              <div className="h-9 bg-white/20 rounded-xl animate-pulse w-48" />
+            ) : (
+              <p className="text-3xl font-bold tabular-nums tracking-tight">
+                {formatRupiah(totalTabungan)}
+              </p>
+            )}
+            <p className="text-xs opacity-75 mt-1">
+              {goals.length} target aktif
             </p>
-          )}
-          <p className="text-xs opacity-70 mt-1">
-            {goals.length} target aktif
-          </p>
-        </div>
-
-        {/* Progress Bar Kontribusi Pasangan */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 mb-5">
-          <div className="flex items-center gap-1.5 mb-2.5">
-            <TrendingUp size={16} className="text-rose-500" strokeWidth={2} />
-            <span className="text-xs font-semibold text-slate-900">Kontribusi Bersama</span>
           </div>
 
-          {/* Bar multi-warna (segmen kiri = orang pertama, segmen kanan = orang kedua) */}
-          <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden flex">
-            <div
-              className="bg-rose-500 h-full transition-all duration-500"
-              style={{ width: `${p1}%` }}
-              title={`${member1?.name ?? 'Anggota 1'}: ${p1}%`}
-            />
-            <div
-              className="bg-slate-300 h-full transition-all duration-500"
-              style={{ width: `${p2}%` }}
-              title={`${member2?.name ?? 'Anggota 2'}: ${p2}%`}
-            />
-          </div>
-
-          {/* Label dua kolom bawah bar */}
-          <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100 text-xs">
-            {/* Orang 1 */}
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
-              <span className="font-medium text-slate-800 truncate">
-                {member1 ? (member1.id === user?.id ? `${member1.name} (kamu)` : member1.name) : 'Menunggu pasangan'}
-              </span>
+          {/* Bar Kontribusi di bagian bawah kartu */}
+          <div className="pt-3 border-t border-white/20 flex flex-col gap-2">
+            <div className="flex items-center justify-between text-xs opacity-80">
+              <span className="font-medium">Kontribusi Bersama</span>
             </div>
 
-            {/* Orang 2 */}
-            <div className="flex items-center gap-1.5 min-w-0 justify-end text-right">
-              <span className="font-medium text-slate-800 truncate">
-                {member2 ? (member2.id === user?.id ? `${member2.name} (kamu)` : member2.name) : '—'}
-              </span>
-              <span className="w-2.5 h-2.5 rounded-full bg-slate-300 shrink-0" />
+            {/* Progress Bar Dwi-Warna (Putih vs Putih Transparan) */}
+            <div className="w-full h-2 bg-black/15 rounded-full overflow-hidden flex">
+              <div
+                className="bg-white h-full transition-all duration-500"
+                style={{ width: `${p1}%` }}
+                title={`${member1?.name ?? 'Anggota 1'}: ${p1}%`}
+              />
+              <div
+                className="bg-white/40 h-full transition-all duration-500"
+                style={{ width: `${p2}%` }}
+                title={`${member2?.name ?? 'Anggota 2'}: ${p2}%`}
+              />
+            </div>
+
+            {/* Nama masing-masing */}
+            <div className="flex items-center justify-between text-[11px] opacity-90 pt-0.5">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="w-2 h-2 rounded-full bg-white shrink-0" />
+                <span className="truncate font-medium">
+                  {member1 ? (member1.id === user?.id ? `${member1.name} (kamu)` : member1.name) : 'Menunggu pasangan'}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 min-w-0 justify-end text-right">
+                <span className="truncate font-medium">
+                  {member2 ? (member2.id === user?.id ? `${member2.name} (kamu)` : member2.name) : '—'}
+                </span>
+                <span className="w-2 h-2 rounded-full bg-white/40 shrink-0" />
+              </div>
             </div>
           </div>
         </div>
