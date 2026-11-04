@@ -1,4 +1,4 @@
-// src/components/DepositSheet.jsx — modal bottom sheet setor / tarik dengan real-time date picker lokal
+// src/components/DepositSheet.jsx — modal bottom sheet setor / tarik dengan fixed header & footer
 import { useState, useEffect, useCallback } from 'react'
 import { X, Loader2, Calendar } from 'lucide-react'
 import { api } from '../lib/api.js'
@@ -102,44 +102,52 @@ export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId })
         aria-hidden
       />
 
-      {/* Sheet Modal dengan animasi Slide Up / Down */}
+      {/* Sheet Modal Container */}
       <div
-        className={`sheet fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] max-h-[90dvh] overflow-y-auto transition-transform duration-200 ease-out ${
+        className={`sheet fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-xl flex flex-col max-h-[90dvh] transition-transform duration-200 ease-out overscroll-contain ${
           isClosing
             ? 'translate-y-full'
             : 'translate-y-0 animate-sheet-up'
         }`}
       >
-        <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-5" />
+        {/* Drag handle bar */}
+        <div className="pt-3 pb-1">
+          <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto" />
+        </div>
 
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-slate-900">Catat Transaksi</h2>
+        {/* 1. Header Fixed Top: Tab Setor & Tarik + Tombol Tutup */}
+        <div className="px-6 py-3 border-b border-slate-100 flex items-center gap-3 shrink-0 bg-white">
+          <div className="flex-1 flex bg-slate-100 rounded-xl p-1">
+            {['setor', 'tarik'].map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => { setTab(t); setError('') }}
+                className={`flex-1 h-10 rounded-lg text-sm font-semibold transition capitalize flex items-center justify-center ${
+                  tab === t
+                    ? t === 'setor'
+                      ? 'bg-white text-rose-600 shadow-sm'
+                      : 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {t === 'setor' ? '+ Setor' : '− Tarik'}
+              </button>
+            ))}
+          </div>
+
           <button
+            type="button"
             onClick={handleClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 transition"
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 transition shrink-0"
             aria-label="Tutup"
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
-        {/* Tab setor / tarik */}
-        <div className="flex bg-slate-100 rounded-xl p-1 mb-5">
-          {['setor', 'tarik'].map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => { setTab(t); setError('') }}
-              className={`flex-1 h-10 rounded-lg text-sm font-medium transition capitalize ${
-                tab === t ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
-              }`}
-            >
-              {t === 'setor' ? '+ Setor' : '− Tarik'}
-            </button>
-          ))}
-        </div>
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {/* 2. Scrollable Body: Form Input Fields */}
+        <form id="deposit-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-4">
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600">
               {error}
@@ -157,7 +165,7 @@ export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId })
               required
               value={form.goalId}
               onChange={handleChange}
-              className="h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+              className="h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent text-base"
             >
               <option value="">Pilih target…</option>
               {goals.map((g) => (
@@ -190,7 +198,7 @@ export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId })
                 value={form.amount}
                 onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value.replace(/\D/g, '') }))}
                 placeholder="0"
-                className="h-12 pl-10 pr-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent w-full tabular-nums"
+                className="h-12 pl-10 pr-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent w-full tabular-nums text-base"
               />
             </div>
           </div>
@@ -225,7 +233,7 @@ export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId })
               value={form.occurredOn}
               onChange={handleChange}
               max={todayStr}
-              className="h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent min-h-[3rem] w-full"
+              className="h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent min-h-[3rem] w-full text-base"
             />
             <p className="text-xs text-slate-400 pl-1">
               {formatTanggal(form.occurredOn)}
@@ -245,21 +253,27 @@ export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId })
               onChange={handleChange}
               maxLength={200}
               placeholder="cth: Gaji bulan ini"
-              className="h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+              className="h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent text-base"
             />
           </div>
+        </form>
 
+        {/* 3. Footer Fixed Bottom: Tombol Simpan Transaksi */}
+        <div className="p-4 px-6 border-t border-slate-100 bg-white shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <button
             type="submit"
+            form="deposit-form"
             disabled={loading}
-            className={`h-12 rounded-xl text-white font-medium flex items-center justify-center gap-2 active:scale-[0.98] transition disabled:opacity-60 disabled:cursor-not-allowed mt-2 ${
-              tab === 'setor' ? 'bg-rose-500' : 'bg-slate-700'
+            className={`w-full h-12 rounded-xl text-white font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition disabled:opacity-60 disabled:cursor-not-allowed shadow-sm ${
+              tab === 'setor'
+                ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-200'
+                : 'bg-slate-800 hover:bg-slate-900 shadow-slate-300'
             }`}
           >
             {loading && <Loader2 size={18} className="animate-spin" />}
             {loading ? 'Menyimpan…' : tab === 'setor' ? 'Catat Setoran' : 'Catat Penarikan'}
           </button>
-        </form>
+        </div>
       </div>
 
       {/* Dialog konfirmasi simpan transaksi */}
