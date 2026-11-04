@@ -1,28 +1,27 @@
 // src/pages/Target.jsx — daftar target
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Plus, Target as TargetIcon, Loader2 } from 'lucide-react'
 import { api } from '../lib/api.js'
+import { useData } from '../context/DataContext.jsx'
 import GoalCard from '../components/GoalCard.jsx'
 import GoalFormSheet from '../components/GoalFormSheet.jsx'
 
-export default function Target({ onGoalCreated }) {
-  const [goals, setGoals] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+export default function Target() {
+  const { goals, isDataLoaded, error: globalError, updateGoals } = useData()
+  const [error, setError] = useState(globalError || '')
   const [showForm, setShowForm] = useState(false)
 
-  useEffect(() => {
-    api.get('/goals')
-      .then((data) => setGoals(data.goals))
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false))
-  }, [])
-
   async function handleCreate(formData) {
-    const data = await api.post('/goals', formData)
-    setGoals((prev) => [data.goal, ...prev])
-    onGoalCreated?.()
+    try {
+      const data = await api.post('/goals', formData)
+      updateGoals((prev) => [data.goal, ...prev])
+    } catch (e) {
+      setError(e.message)
+      throw e
+    }
   }
+
+  const loading = !isDataLoaded
 
   return (
     <div className="min-h-[100dvh] bg-slate-50 pb-24">
@@ -77,4 +76,3 @@ export default function Target({ onGoalCreated }) {
     </div>
   )
 }
-

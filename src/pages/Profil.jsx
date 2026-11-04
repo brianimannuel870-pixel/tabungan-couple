@@ -1,26 +1,21 @@
 // src/pages/Profil.jsx
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Copy, Check, LogOut, Users, Loader2 } from 'lucide-react'
-import { api } from '../lib/api.js'
 import { useAuth } from '../hooks/useAuth.jsx'
+import { useData } from '../context/DataContext.jsx'
 import { formatTanggal } from '../lib/format.js'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 
 export default function Profil() {
   const { user, logout } = useAuth()
-  const [couple, setCouple] = useState(null)
-  const [loadingCouple, setLoadingCouple] = useState(true)
-  const [errorCouple, setErrorCouple] = useState('')
+  const { couple, isDataLoaded, error: globalError } = useData()
+
   const [copied, setCopied] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
   const [confirmLogout, setConfirmLogout] = useState(false)
 
-  useEffect(() => {
-    api.get('/couple')
-      .then((data) => setCouple(data.couple))
-      .catch((e) => setErrorCouple(e.message))
-      .finally(() => setLoadingCouple(false))
-  }, [])
+  const loadingCouple = !isDataLoaded
+  const errorCouple = globalError
 
   async function handleCopy() {
     if (!couple?.inviteCode) return
@@ -111,7 +106,7 @@ export default function Profil() {
               {/* Anggota */}
               <p className="text-xs text-slate-500 mb-2">Anggota</p>
               <div className="flex flex-col gap-2">
-                {couple.members.map((m) => (
+                {couple.members?.map((m) => (
                   <div key={m.id} className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-rose-500 font-semibold text-sm shrink-0">
                       {m.name[0].toUpperCase()}

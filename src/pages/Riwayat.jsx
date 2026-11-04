@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Loader2, History, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { api } from '../lib/api.js'
 import { useAuth } from '../hooks/useAuth.jsx'
+import { useData } from '../context/DataContext.jsx'
 import { formatRupiah, formatTanggalPendek } from '../lib/format.js'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 
@@ -51,9 +52,10 @@ function DepositItem({ deposit, currentUserId, onRequestDelete }) {
 
 export default function Riwayat() {
   const { user } = useAuth()
+  const { goals, couple, handleDepositSaved } = useData()
+  const members = couple?.members ?? []
+
   const [deposits, setDeposits] = useState([])
-  const [goals, setGoals] = useState([])
-  const [members, setMembers] = useState([])
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, hasNext: false, hasPrev: false })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -64,16 +66,6 @@ export default function Riwayat() {
   const [filterGoal, setFilterGoal] = useState('')
   const [filterUser, setFilterUser] = useState('')
   const [page, setPage] = useState(1)
-
-  // Load goals & members sekali di awal
-  useEffect(() => {
-    Promise.all([api.get('/goals'), api.get('/couple')])
-      .then(([gData, cData]) => {
-        setGoals(gData.goals ?? [])
-        setMembers(cData.couple.members ?? [])
-      })
-      .catch((e) => setError(e.message))
-  }, [])
 
   // Load deposits setiap filter atau page berubah
   const loadDeposits = useCallback(async () => {
@@ -100,18 +92,18 @@ export default function Riwayat() {
 
   function handleFilterGoalChange(e) {
     setFilterGoal(e.target.value)
-    setPage(1) // reset ke halaman 1 saat filter berubah
+    setPage(1)
   }
 
   function handleFilterUserChange(e) {
     setFilterUser(e.target.value)
-    setPage(1) // reset ke halaman 1 saat filter berubah
+    setPage(1)
   }
 
   function handleDelete(id) {
     const nextList = deposits.filter((d) => d.id !== id)
     setDeposits(nextList)
-    // Jika halaman jadi kosong dan bukan halaman 1, mundur 1 halaman
+    handleDepositSaved()
     if (nextList.length === 0 && page > 1) {
       setPage((p) => p - 1)
     } else {

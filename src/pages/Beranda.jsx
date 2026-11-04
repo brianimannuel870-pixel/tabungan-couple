@@ -1,9 +1,8 @@
 // src/pages/Beranda.jsx — total tabungan, progress bar kontribusi, ringkasan target, 10 aktivitas
-import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { PiggyBank, ChevronRight, Loader2 } from 'lucide-react'
-import { api } from '../lib/api.js'
+import { PiggyBank, ChevronRight } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth.jsx'
+import { useData } from '../context/DataContext.jsx'
 import { formatRupiah, formatTanggalPendek } from '../lib/format.js'
 import ProgressBar from '../components/ProgressBar.jsx'
 
@@ -22,33 +21,13 @@ function SkeletonCard() {
   )
 }
 
-export default function Beranda({ depositTrigger = 0 }) {
+export default function Beranda() {
   const { user } = useAuth()
-  const [goals, setGoals] = useState([])
-  const [deposits, setDeposits] = useState([])
-  const [members, setMembers] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const { goals, couple, recentDeposits, isDataLoaded, error } = useData()
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [gData, dData, cData] = await Promise.all([
-          api.get('/goals'),
-          api.get('/deposits?limit=10'),
-          api.get('/couple'),
-        ])
-        setGoals(gData.goals ?? [])
-        setDeposits(dData.deposits ?? [])
-        setMembers(cData.couple?.members ?? [])
-      } catch (e) {
-        setError(e.message)
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [depositTrigger])
+  const members = couple?.members ?? []
+  const deposits = recentDeposits ?? []
+  const loading = !isDataLoaded
 
   const totalTabungan = goals.reduce((s, g) => s + g.balance, 0)
 
@@ -205,7 +184,7 @@ export default function Beranda({ depositTrigger = 0 }) {
         </div>
 
         {/* 10 Aktivitas terbaru */}
-        {!loading && deposits.length > 0 && (
+        {deposits.length > 0 && (
           <div>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-base font-medium text-slate-900">Aktivitas Terbaru</h2>
