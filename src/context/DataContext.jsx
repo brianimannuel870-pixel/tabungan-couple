@@ -11,6 +11,8 @@ export function DataProvider({ children }) {
   const [goals, setGoals] = useState([])
   const [couple, setCouple] = useState(null)
   const [recentDeposits, setRecentDeposits] = useState([])
+  // Simpan data setoran 35 hari terakhir untuk kalender & streak akurat
+  const [calendarDeposits, setCalendarDeposits] = useState([])
   // Cache data riwayat halaman pertama default (all filter, page 1)
   const [initialHistory, setInitialHistory] = useState({
     deposits: [],
@@ -26,6 +28,7 @@ export function DataProvider({ children }) {
       setGoals([])
       setCouple(null)
       setRecentDeposits([])
+      setCalendarDeposits([])
       setInitialHistory({
         deposits: [],
         pagination: { page: 1, totalPages: 1, total: 0, hasNext: false, hasPrev: false },
@@ -39,14 +42,16 @@ export function DataProvider({ children }) {
     setError('')
 
     try {
-      const [gData, cData, dData] = await Promise.all([
+      const [gData, cData, dData, calData] = await Promise.all([
         api.get('/goals'),
         api.get('/couple'),
         api.get('/deposits?page=1&limit=10'),
+        api.get('/deposits?page=1&limit=50'), // Data cukup untuk kalender 1 bulan & streak
       ])
       setGoals(gData.goals ?? [])
       setCouple(cData.couple ?? null)
       setRecentDeposits(dData.deposits ?? [])
+      setCalendarDeposits(calData.deposits ?? [])
       setInitialHistory({
         deposits: dData.deposits ?? [],
         pagination: dData.pagination ?? { page: 1, totalPages: 1, total: 0, hasNext: false, hasPrev: false },
@@ -66,6 +71,7 @@ export function DataProvider({ children }) {
       setGoals([])
       setCouple(null)
       setRecentDeposits([])
+      setCalendarDeposits([])
       setInitialHistory({
         deposits: [],
         pagination: { page: 1, totalPages: 1, total: 0, hasNext: false, hasPrev: false },
@@ -89,6 +95,9 @@ export function DataProvider({ children }) {
           loaded: true,
         })
       }).catch(() => {}),
+      api.get('/deposits?page=1&limit=50').then((d) => {
+        setCalendarDeposits(d.deposits ?? [])
+      }).catch(() => {}),
     ])
   }, [])
 
@@ -105,6 +114,9 @@ export function DataProvider({ children }) {
           loaded: true,
         })
       }).catch(() => {}),
+      api.get('/deposits?page=1&limit=50').then((d) => {
+        setCalendarDeposits(d.deposits ?? [])
+      }).catch(() => {}),
     ])
   }, [])
 
@@ -118,6 +130,7 @@ export function DataProvider({ children }) {
         goals,
         couple,
         recentDeposits,
+        calendarDeposits,
         initialHistory,
         setInitialHistory,
         isDataLoaded,

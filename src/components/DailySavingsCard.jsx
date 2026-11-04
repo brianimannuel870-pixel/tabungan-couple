@@ -10,6 +10,18 @@ function getLocalDateString(d) {
   return `${year}-${month}-${day}`
 }
 
+// Normalisasi string tanggal dari DB / API ke format YYYY-MM-DD
+function normalizeDateStr(dateVal) {
+  if (!dateVal) return ''
+  if (typeof dateVal === 'string') {
+    return dateVal.split('T')[0]
+  }
+  if (dateVal instanceof Date) {
+    return getLocalDateString(dateVal)
+  }
+  return String(dateVal).slice(0, 10)
+}
+
 export default function DailySavingsCard({ deposits = [], members = [], currentUserId }) {
   const todayStr = useMemo(() => getLocalDateString(new Date()), [])
 
@@ -42,6 +54,16 @@ export default function DailySavingsCard({ deposits = [], members = [], currentU
     return days
   }, [todayStr])
 
+  // Normalisasi semua setoran agar tanggal terstandarisasi YYYY-MM-DD
+  const normalizedSetorDeposits = useMemo(() => {
+    return deposits
+      .filter((dep) => dep.type === 'setor')
+      .map((dep) => ({
+        ...dep,
+        normalizedDate: normalizeDateStr(dep.occurredOn),
+      }))
+  }, [deposits])
+
   // Hitung setoran per hari & user
   const dayStats = useMemo(() => {
     const map = {}
@@ -58,21 +80,22 @@ export default function DailySavingsCard({ deposits = [], members = [], currentU
     const member1 = members[0]
     const member2 = members[1]
 
-    deposits.forEach((dep) => {
-      if (dep.type === 'setor' && map[dep.occurredOn]) {
-        map[dep.occurredOn].total += dep.amount
+    normalizedSetorDeposits.forEach((dep) => {
+      const dateKey = dep.normalizedDate
+      if (map[dateKey]) {
+        map[dateKey].total += dep.amount
         if (member1 && dep.userId === member1.id) {
-          map[dep.occurredOn].user1Contributed = true
-          map[dep.occurredOn].user1Amount += dep.amount
+          map[dateKey].user1Contributed = true
+          map[dateKey].user1Amount += dep.amount
         } else if (member2 && dep.userId === member2.id) {
-          map[dep.occurredOn].user2Contributed = true
-          map[dep.occurredOn].user2Amount += dep.amount
+          map[dateKey].user2Contributed = true
+          map[dateKey].user2Amount += dep.amount
         }
       }
     })
 
     return map
-  }, [weekDays, deposits, members])
+  }, [weekDays, normalizedSetorDeposits, members])
 
   // Hitung streak komitmen aktif (hari berturut-turut tabungan terisi hingga hari ini)
   const currentStreak = useMemo(() => {
@@ -84,18 +107,18 @@ export default function DailySavingsCard({ deposits = [], members = [], currentU
       const d = new Date(today)
       d.setDate(today.getDate() - i)
       const str = getLocalDateString(d)
-      const hasDeposit = deposits.some((dep) => dep.type === 'setor' && dep.occurredOn === str)
+      const hasDeposit = normalizedSetorDeposits.some((dep) => dep.normalizedDate === str)
 
       if (hasDeposit) {
         streak++
       } else {
-        // Jika hari ini belum setor, jangan langsung batalkan streak kemarin
+        // Jika hari ini belum setor, jangan batalkan streak hari kemarin
         if (i === 0) continue
         break
       }
     }
     return streak
-  }, [deposits])
+  }, [normalizedSetorDeposits])
 
   const member1 = members[0]
   const member2 = members[1]

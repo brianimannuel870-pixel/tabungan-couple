@@ -24,7 +24,7 @@ function SkeletonCard() {
 
 export default function Beranda() {
   const { user } = useAuth()
-  const { goals, couple, recentDeposits, isDataLoaded, error } = useData()
+  const { goals, couple, recentDeposits, calendarDeposits, isDataLoaded, error } = useData()
 
   const members = couple?.members ?? []
   const deposits = recentDeposits ?? []
@@ -122,10 +122,10 @@ export default function Beranda() {
           </div>
         </div>
 
-        {/* Kalender Tabungan Harian (Weekly Strip Carousel) */}
+        {/* Kalender Tabungan Harian (Weekly Strip Carousel) dengan data lengkap calendarDeposits */}
         {!loading && (
           <DailySavingsCard
-            deposits={deposits}
+            deposits={calendarDeposits?.length > 0 ? calendarDeposits : deposits}
             members={members}
             currentUserId={user?.id}
           />
