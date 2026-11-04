@@ -1,5 +1,6 @@
 // src/context/DataContext.jsx — Global App Data Cache
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { AlertCircle, RefreshCw } from 'lucide-react'
 import { api } from '../lib/api.js'
 import { useAuth } from '../hooks/useAuth.jsx'
 
@@ -21,6 +22,7 @@ export function DataProvider({ children }) {
       setCouple(null)
       setRecentDeposits([])
       setIsDataLoaded(false)
+      setError('')
       return
     }
 
@@ -38,7 +40,7 @@ export function DataProvider({ children }) {
       setRecentDeposits(dData.deposits ?? [])
       setIsDataLoaded(true)
     } catch (e) {
-      setError(e.message)
+      setError(e.message || 'Gagal memuat data tabungan.')
     } finally {
       if (showLoader) setInitialLoading(false)
     }
@@ -53,32 +55,12 @@ export function DataProvider({ children }) {
       setCouple(null)
       setRecentDeposits([])
       setIsDataLoaded(false)
+      setError('')
     }
   }, [user?.coupleId, isDataLoaded, refreshAllData])
 
-  // Helpers update state secara reaktif tanpa re-fetch total bila memungkinkan
-  const updateGoals = useCallback((updater) => {
-    setGoals((prev) => (typeof updater === 'function' ? updater(prev) : updater))
-  }, [])
-
-  const reloadGoals = useCallback(async () => {
-    if (!user?.coupleId) return
-    try {
-      const data = await api.get('/goals')
-      setGoals(data.goals ?? [])
-    } catch {}
-  }, [user?.coupleId])
-
-  const reloadRecentDeposits = useCallback(async () => {
-    if (!user?.coupleId) return
-    try {
-      const data = await api.get('/deposits?limit=10')
-      setRecentDeposits(data.deposits ?? [])
-    } catch {}
-  }, [user?.coupleId])
-
+  // Sinkronisasi penuh saat mutasi (setor / tarik)
   const handleDepositSaved = useCallback(() => {
-    // Refresh paralel data terkait setoran baru
     Promise.all([
       api.get('/goals').then((d) => setGoals(d.goals ?? [])).catch(() => {}),
       api.get('/couple').then((d) => setCouple(d.couple ?? null)).catch(() => {}),
@@ -86,11 +68,17 @@ export function DataProvider({ children }) {
     ])
   }, [])
 
+  // Sinkronisasi penuh saat target ditambah / diubah / dihapus
   const handleGoalUpdated = useCallback(() => {
     Promise.all([
       api.get('/goals').then((d) => setGoals(d.goals ?? [])).catch(() => {}),
       api.get('/couple').then((d) => setCouple(d.couple ?? null)).catch(() => {}),
+      api.get('/deposits?limit=10').then((d) => setRecentDeposits(d.deposits ?? [])).catch(() => {}),
     ])
+  }, [])
+
+  const updateGoals = useCallback((updater) => {
+    setGoals((prev) => (typeof updater === 'function' ? updater(prev) : updater))
   }, [])
 
   return (
@@ -103,8 +91,6 @@ export function DataProvider({ children }) {
         isDataLoaded,
         error,
         refreshAllData,
-        reloadGoals,
-        reloadRecentDeposits,
         updateGoals,
         handleDepositSaved,
         handleGoalUpdated,
@@ -117,6 +103,26 @@ export function DataProvider({ children }) {
           <p className="text-sm font-medium text-slate-600 animate-pulse">Menyiapkan data tabungan…</p>
         </div>
       )}
+
+      {/* Error Fallback jika prefetch awal gagal total */}
+      {!initialLoading && !isDataLoaded && error && user?.coupleId && (
+        <div className="fixed inset-0 z-[100] bg-slate-50 flex flex-col items-center justify-center px-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 max-w-sm w-full text-center flex flex-col items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center">
+              <AlertCircle size={24} />
+            </div>
+            <h3 className="text-base font-semibold text-slate-900">Gagal Memuat Data</h3>
+            <p className="text-sm text-slate-500">{error}</p>
+            <button
+              onClick={() => refreshAllData(true)}
+              className="mt-2 h-11 px-5 rounded-xl bg-rose-500 text-white text-sm font-medium flex items-center justify-center gap-2 active:scale-[0.98] transition w-full"
+            >
+              <RefreshCw size={16} /> Coba Lagi
+            </button>
+          </div>
+        </div>
+      )}
+
       {children}
     </DataContext.Provider>
   )

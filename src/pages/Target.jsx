@@ -7,14 +7,14 @@ import GoalCard from '../components/GoalCard.jsx'
 import GoalFormSheet from '../components/GoalFormSheet.jsx'
 
 export default function Target() {
-  const { goals, isDataLoaded, error: globalError, updateGoals } = useData()
+  const { goals, isDataLoaded, error: globalError, handleGoalUpdated } = useData()
   const [error, setError] = useState(globalError || '')
   const [showForm, setShowForm] = useState(false)
 
   async function handleCreate(formData) {
     try {
-      const data = await api.post('/goals', formData)
-      updateGoals((prev) => [data.goal, ...prev])
+      await api.post('/goals', formData)
+      handleGoalUpdated()
     } catch (e) {
       setError(e.message)
       throw e
