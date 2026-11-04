@@ -65,8 +65,11 @@ export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId })
         note: form.note.trim() || null,
         occurredOn: form.occurredOn || todayStr,
       })
-      onSaved(data.deposit)
-      handleClose()
+      try {
+        onSaved?.(data.deposit)
+      } finally {
+        handleClose()
+      }
     } catch (e) {
       setError(e.message)
       setLoading(false)

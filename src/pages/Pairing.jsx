@@ -1,13 +1,11 @@
 // src/pages/Pairing.jsx
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { PiggyBank, Heart, Loader2 } from 'lucide-react'
+import { Heart, Loader2 } from 'lucide-react'
 import { api } from '../lib/api.js'
 import { useAuth } from '../hooks/useAuth.jsx'
 
 export default function Pairing() {
-  const { user, login: _login } = useAuth()
-  const navigate = useNavigate()
+  const { user } = useAuth()
 
   const [tab, setTab] = useState('buat') // 'buat' | 'gabung'
   const [kode, setKode] = useState('')
@@ -19,12 +17,7 @@ export default function Pairing() {
     setLoading(true)
     try {
       await api.post('/couple/create', {})
-      // Refresh user agar coupleId terisi
-      const data = await api.get('/auth/me')
-      // Update user di context melalui re-fetch manual — navigate ke / akan trigger CoupleRoute
-      // Simpan di localStorage sementara tidak dipakai; cukup navigate
-      navigate('/', { replace: true })
-      // Paksa reload agar AuthProvider re-fetch /auth/me
+      // Hard reload agar AuthProvider re-fetch /auth/me dengan coupleId baru
       window.location.replace('/')
     } catch (e) {
       setError(e.message)

@@ -1,8 +1,8 @@
-// POST /api/couple/join — bergabung ke Ruang Couple via kode
+// POST /api/couple/join — bergabung ke Ruang Couple via kode (atomic insert, max 2 members)
 import { z } from 'zod'
 import { sql } from '../_lib/db.js'
 import { requireAuth } from '../_lib/auth.js'
-import { ok, err, methodNotAllowed } from '../_lib/http.js'
+import { ok, err, methodNotAllowed, withErrorHandler } from '../_lib/http.js'
 
 const schema = z.object({
   inviteCode: z
@@ -11,7 +11,7 @@ const schema = z.object({
     .toUpperCase(),
 })
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST'])
 
   const payload = await requireAuth(req, res)
@@ -38,21 +38,22 @@ export default async function handler(req, res) {
   `
   if (!couple) return err(res, 'Kode tidak valid atau sudah tidak aktif.')
 
-  // Cek jumlah anggota (max 2) — pakai SELECT FOR UPDATE agar race-condition aman
-  const members = await sql`
-    SELECT user_id FROM couple_members
-    WHERE couple_id = ${couple.id}
-    FOR UPDATE
+  // Atomic conditional insert: Hanya insert jika jumlah anggota saat ini masih < 2
+  // Mencegah race condition tanpa perlu stateful transaction lock
+  const inserted = await sql`
+    INSERT INTO couple_members (couple_id, user_id)
+    SELECT ${couple.id}, ${userId}
+    WHERE (
+      SELECT COUNT(*)::int FROM couple_members WHERE couple_id = ${couple.id}
+    ) < 2
+    RETURNING couple_id
   `
-  if (members.length >= 2) {
+
+  if (inserted.length === 0) {
     return err(res, 'Ruang Couple sudah penuh (maksimal 2 orang).')
   }
-
-  await sql`
-    INSERT INTO couple_members (couple_id, user_id)
-    VALUES (${couple.id}, ${userId})
-  `
 
   ok(res, { couple: { id: couple.id } })
 }
 
+export default withErrorHandler(handler)

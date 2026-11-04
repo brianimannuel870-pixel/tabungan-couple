@@ -1,5 +1,5 @@
 // src/pages/GoalDetail.jsx — detail target
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Pencil, Trash2, Loader2, TrendingUp } from 'lucide-react'
 import { api } from '../lib/api.js'
@@ -31,7 +31,7 @@ function TransactionItem({ deposit }) {
   )
 }
 
-export default function GoalDetail() {
+export default function GoalDetail({ onGoalUpdated }) {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -43,25 +43,29 @@ export default function GoalDetail() {
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
-  function fetchGoal() {
+  const fetchGoal = useCallback(() => {
     setLoading(true)
     api.get(`/goals/${id}`)
       .then((data) => setGoal(data.goal))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
-  }
+  }, [id])
 
-  useEffect(() => { fetchGoal() }, [id])
+  useEffect(() => {
+    fetchGoal()
+  }, [fetchGoal])
 
   async function handleUpdate(formData) {
     await api.put(`/goals/${id}`, formData)
     fetchGoal()
+    onGoalUpdated?.()
   }
 
   async function handleDelete() {
     setDeleting(true)
     try {
       await api.delete(`/goals/${id}`)
+      onGoalUpdated?.()
       navigate('/target', { replace: true })
     } catch (e) {
       setError(e.message)
@@ -217,7 +221,7 @@ export default function GoalDetail() {
       {/* Konfirmasi hapus */}
       {confirmDelete && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setConfirmDelete(false)} />
+          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => !deleting && setConfirmDelete(false)} />
           <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl p-6 shadow-xl max-w-sm mx-auto">
             <h3 className="text-base font-semibold text-slate-900 mb-2">Hapus Target?</h3>
             <p className="text-sm text-slate-500 mb-5">

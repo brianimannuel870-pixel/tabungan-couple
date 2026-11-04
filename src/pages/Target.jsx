@@ -5,7 +5,7 @@ import { api } from '../lib/api.js'
 import GoalCard from '../components/GoalCard.jsx'
 import GoalFormSheet from '../components/GoalFormSheet.jsx'
 
-export default function Target() {
+export default function Target({ onGoalCreated }) {
   const [goals, setGoals] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -21,6 +21,7 @@ export default function Target() {
   async function handleCreate(formData) {
     const data = await api.post('/goals', formData)
     setGoals((prev) => [data.goal, ...prev])
+    onGoalCreated?.()
   }
 
   return (

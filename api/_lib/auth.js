@@ -1,6 +1,10 @@
 // api/_lib/auth.js — JWT & cookie helper
 import { SignJWT, jwtVerify } from 'jose'
 
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is not defined!')
+}
+
 const SECRET = new TextEncoder().encode(process.env.JWT_SECRET)
 const COOKIE_NAME = 'tc_session'
 const MAX_AGE = 60 * 60 * 24 * 30 // 30 hari
@@ -61,4 +65,3 @@ export async function requireAuth(req, res) {
     return null
   }
 }
-

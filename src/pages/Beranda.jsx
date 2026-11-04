@@ -22,7 +22,7 @@ function SkeletonCard() {
   )
 }
 
-export default function Beranda() {
+export default function Beranda({ depositTrigger = 0 }) {
   const { user } = useAuth()
   const [goals, setGoals] = useState([])
   const [deposits, setDeposits] = useState([])
@@ -48,7 +48,7 @@ export default function Beranda() {
       }
     }
     load()
-  }, [])
+  }, [depositTrigger])
 
   const totalTabungan = goals.reduce((s, g) => s + g.balance, 0)
 
@@ -59,8 +59,8 @@ export default function Beranda() {
   const c2 = member2?.totalContributed ?? 0
   const totalBoth = c1 + c2
 
-  const p1 = totalBoth > 0 ? Math.round((c1 / totalBoth) * 100) : 50
-  const p2 = totalBoth > 0 ? 100 - p1 : 50
+  const p1 = totalBoth > 0 ? Math.round((c1 / totalBoth) * 100) : 0
+  const p2 = totalBoth > 0 ? 100 - p1 : 0
 
   const topGoals = [...goals]
     .sort((a, b) => {

@@ -17,19 +17,27 @@ import { useAuth } from './hooks/useAuth.jsx'
 function AuthedApp() {
   const { user } = useAuth()
   const [goals, setGoals] = useState([])
+  const [depositTrigger, setDepositTrigger] = useState(0)
 
-  // Muat goals saat user sudah punya couple
-  useEffect(() => {
+  // Fungsi reload goals yang bisa dipanggil dari mana saja
+  const loadGoals = useCallback(() => {
     if (!user?.coupleId) return
     api.get('/goals')
-      .then((d) => setGoals(d.goals))
+      .then((d) => setGoals(d.goals ?? []))
       .catch(() => {})
   }, [user?.coupleId])
 
+  // Muat goals saat user sudah punya couple
+  useEffect(() => {
+    loadGoals()
+  }, [loadGoals])
+
   const handleDepositSaved = useCallback(() => {
-    // Refresh goals agar saldo FAB terbaru
-    api.get('/goals').then((d) => setGoals(d.goals)).catch(() => {})
-  }, [])
+    // 1. Refresh goals agar saldo di FAB & list ter-update
+    loadGoals()
+    // 2. Increment trigger agar Beranda me-refresh daftar 10 aktivitas
+    setDepositTrigger((prev) => prev + 1)
+  }, [loadGoals])
 
   return (
     <Routes>
@@ -44,21 +52,21 @@ function AuthedApp() {
       <Route path="/" element={
         <CoupleRoute>
           <AppShell goals={goals} onDepositSaved={handleDepositSaved}>
-            <Beranda />
+            <Beranda depositTrigger={depositTrigger} />
           </AppShell>
         </CoupleRoute>
       } />
       <Route path="/target" element={
         <CoupleRoute>
           <AppShell goals={goals} onDepositSaved={handleDepositSaved}>
-            <Target />
+            <Target onGoalCreated={loadGoals} />
           </AppShell>
         </CoupleRoute>
       } />
       <Route path="/target/:id" element={
         <CoupleRoute>
           <AppShell goals={goals} onDepositSaved={handleDepositSaved}>
-            <GoalDetail />
+            <GoalDetail onGoalUpdated={loadGoals} />
           </AppShell>
         </CoupleRoute>
       } />

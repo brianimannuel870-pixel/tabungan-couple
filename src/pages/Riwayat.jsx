@@ -128,9 +128,10 @@ export default function Riwayat() {
   }
 
   function handleDelete(id) {
-    setDeposits((prev) => prev.filter((d) => d.id !== id))
+    const nextList = deposits.filter((d) => d.id !== id)
+    setDeposits(nextList)
     // Jika halaman jadi kosong dan bukan halaman 1, mundur 1 halaman
-    if (deposits.length === 1 && page > 1) {
+    if (nextList.length === 0 && page > 1) {
       setPage((p) => p - 1)
     } else {
       loadDeposits()

@@ -1,7 +1,7 @@
 // POST /api/couple/create — buat Ruang Couple baru
 import { sql } from '../_lib/db.js'
 import { requireAuth } from '../_lib/auth.js'
-import { ok, err, methodNotAllowed } from '../_lib/http.js'
+import { ok, err, methodNotAllowed, withErrorHandler } from '../_lib/http.js'
 
 // Karakter aman: tanpa 0/O/1/I yang membingungkan
 const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -14,7 +14,7 @@ function generateInviteCode() {
   return code
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST'])
 
   const payload = await requireAuth(req, res)
@@ -39,7 +39,7 @@ export default async function handler(req, res) {
   }
   if (!inviteCode) return err(res, 'Gagal membuat kode. Coba lagi.', 500)
 
-  // Buat couple + tambahkan pembuat sebagai anggota dalam satu transaksi
+  // Buat couple + tambahkan pembuat sebagai anggota dalam satu CTE atomik
   const [couple] = await sql`
     WITH new_couple AS (
       INSERT INTO couples (invite_code, created_by)
@@ -55,3 +55,4 @@ export default async function handler(req, res) {
   ok(res, { couple: { id: couple.id, inviteCode: couple.invite_code } }, 201)
 }
 
+export default withErrorHandler(handler)
