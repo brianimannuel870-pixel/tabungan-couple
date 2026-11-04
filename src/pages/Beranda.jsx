@@ -1,10 +1,11 @@
-// src/pages/Beranda.jsx — total tabungan, progress bar kontribusi, ringkasan target, 10 aktivitas
+// src/pages/Beranda.jsx — total tabungan, kalender mingguan, progress bar kontribusi, ringkasan target, 10 aktivitas
 import { Link } from 'react-router-dom'
 import { PiggyBank, ChevronRight } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { useData } from '../context/DataContext.jsx'
 import { formatRupiah, formatTanggalPendek } from '../lib/format.js'
 import ProgressBar from '../components/ProgressBar.jsx'
+import DailySavingsCard from '../components/DailySavingsCard.jsx'
 
 function SkeletonCard() {
   return (
@@ -120,6 +121,15 @@ export default function Beranda() {
             </div>
           </div>
         </div>
+
+        {/* Kalender Tabungan Harian (Weekly Strip Carousel) */}
+        {!loading && (
+          <DailySavingsCard
+            deposits={deposits}
+            members={members}
+            currentUserId={user?.id}
+          />
+        )}
 
         {/* Error */}
         {error && (
