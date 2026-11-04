@@ -5,11 +5,13 @@
 //   "couple"  — butuh login + couple; jika belum couple → /pairing
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.jsx'
+import { useData } from '../context/DataContext.jsx'
 
 function Loading() {
   return (
-    <div className="min-h-[100dvh] bg-slate-50 flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-[100dvh] bg-slate-50 flex flex-col items-center justify-center gap-3">
+      <div className="w-9 h-9 border-3 border-rose-500 border-t-transparent rounded-full animate-spin" />
+      <p className="text-xs font-medium text-slate-400">Menyiapkan tabungan…</p>
     </div>
   )
 }
@@ -31,9 +33,16 @@ export function AuthRoute({ children }) {
 }
 
 export function CoupleRoute({ children }) {
-  const { user, loading } = useAuth()
-  if (loading) return <Loading />
+  const { user, loading: authLoading } = useAuth()
+  const { isDataLoaded, error } = useData()
+
+  // Tunggu auth check selesai dulu
+  if (authLoading) return <Loading />
   if (!user) return <Navigate to="/login" replace />
   if (!user.coupleId) return <Navigate to="/pairing" replace />
+
+  // Tunggu data tabungan siap (hanya tampil 1 kali loading terpadu tanpa overlay susulan)
+  if (!isDataLoaded && !error) return <Loading />
+
   return children
 }

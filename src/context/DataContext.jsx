@@ -17,12 +17,11 @@ export function DataProvider({ children }) {
     pagination: { page: 1, totalPages: 1, total: 0, hasNext: false, hasPrev: false },
     loaded: false,
   })
-  const [initialLoading, setInitialLoading] = useState(false)
   const [isDataLoaded, setIsDataLoaded] = useState(false)
   const [error, setError] = useState('')
 
   // Prefetch seluruh data inti saat user login & ada couple
-  const refreshAllData = useCallback(async (showLoader = false) => {
+  const refreshAllData = useCallback(async () => {
     if (!user?.coupleId) {
       setGoals([])
       setCouple(null)
@@ -37,7 +36,6 @@ export function DataProvider({ children }) {
       return
     }
 
-    if (showLoader) setInitialLoading(true)
     setError('')
 
     try {
@@ -57,15 +55,13 @@ export function DataProvider({ children }) {
       setIsDataLoaded(true)
     } catch (e) {
       setError(e.message || 'Gagal memuat data tabungan.')
-    } finally {
-      if (showLoader) setInitialLoading(false)
     }
   }, [user?.coupleId])
 
   // Efek bootstrap data awal
   useEffect(() => {
     if (user?.coupleId && !isDataLoaded) {
-      refreshAllData(true)
+      refreshAllData()
     } else if (!user?.coupleId) {
       setGoals([])
       setCouple(null)
@@ -124,7 +120,6 @@ export function DataProvider({ children }) {
         recentDeposits,
         initialHistory,
         setInitialHistory,
-        initialLoading,
         isDataLoaded,
         error,
         refreshAllData,
@@ -133,16 +128,8 @@ export function DataProvider({ children }) {
         handleGoalUpdated,
       }}
     >
-      {/* Loading Overlay saat data diinject pertama kali setelah login */}
-      {initialLoading && (
-        <div className="fixed inset-0 z-[100] bg-slate-50/90 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
-          <div className="w-10 h-10 border-3 border-rose-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm font-medium text-slate-600 animate-pulse">Menyiapkan data tabungan…</p>
-        </div>
-      )}
-
-      {/* Error Fallback jika prefetch awal gagal total */}
-      {!initialLoading && !isDataLoaded && error && user?.coupleId && (
+      {/* Error Fallback jika fetch awal gagal total */}
+      {!isDataLoaded && error && user?.coupleId && (
         <div className="fixed inset-0 z-[100] bg-slate-50 flex flex-col items-center justify-center px-4">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 max-w-sm w-full text-center flex flex-col items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center">
@@ -151,7 +138,7 @@ export function DataProvider({ children }) {
             <h3 className="text-base font-semibold text-slate-900">Gagal Memuat Data</h3>
             <p className="text-sm text-slate-500">{error}</p>
             <button
-              onClick={() => refreshAllData(true)}
+              onClick={() => refreshAllData()}
               className="mt-2 h-11 px-5 rounded-xl bg-rose-500 text-white text-sm font-medium flex items-center justify-center gap-2 active:scale-[0.98] transition w-full"
             >
               <RefreshCw size={16} /> Coba Lagi
