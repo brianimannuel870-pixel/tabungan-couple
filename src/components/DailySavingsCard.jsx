@@ -140,41 +140,44 @@ export default function DailySavingsCard({ deposits = [], members = [], currentU
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 mb-5">
       {/* Header Card */}
-      <div className="flex items-center justify-between mb-3.5">
-        <div className="flex items-center gap-2">
-          <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition ${
-            currentStreak > 0 ? 'bg-amber-50 text-amber-500' : 'bg-slate-100 text-slate-400'
-          }`}>
-            <Flame size={18} className={currentStreak > 0 ? 'fill-amber-500' : ''} />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900 leading-tight">
-              Tabungan Minggu Ini
-            </h3>
-            <p className="text-[11px] text-slate-400">
-              {currentStreak > 0 ? (
-                <span className="text-amber-600 font-medium">🔥 {currentStreak} hari streak kompak</span>
-              ) : (
-                'Nabung bareng tiap hari untuk nyalakan streak!'
-              )}
-            </p>
-          </div>
+      <div className="flex items-center gap-2.5 mb-3.5">
+        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition ${
+          currentStreak > 0 ? 'bg-amber-50 text-amber-500' : 'bg-slate-100 text-slate-400'
+        }`}>
+          <Flame size={18} className={currentStreak > 0 ? 'fill-amber-500' : ''} />
         </div>
 
-        {/* Legend / Status Indikator Pasangan */}
-        <div className="flex items-center gap-2">
-          {member1 && (
-            <span className="flex items-center gap-1 text-[10px] text-slate-500 font-medium" title={member1.name}>
-              <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />
-              <span className="max-w-[50px] truncate">{member1.id === currentUserId ? 'Kamu' : member1.name}</span>
-            </span>
-          )}
-          {member2 && (
-            <span className="flex items-center gap-1 text-[10px] text-slate-500 font-medium" title={member2.name}>
-              <span className="w-2 h-2 rounded-full bg-indigo-500 inline-block" />
-              <span className="max-w-[50px] truncate">{member2.id === currentUserId ? 'Kamu' : member2.name}</span>
-            </span>
-          )}
+        <div className="min-w-0 flex-1">
+          {/* Judul + Indikator Anggota 1 & Anggota 2 bersebelahan di baris atas */}
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-slate-900 leading-tight truncate">
+              Tabungan Minggu Ini
+            </h3>
+
+            {/* Indikator Anggota 1 & 2 di kanan teks */}
+            <div className="flex items-center gap-2 shrink-0">
+              {member1 && (
+                <span className="flex items-center gap-1 text-[10px] text-slate-600 font-medium" title={member1.name}>
+                  <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+                  <span className="max-w-[48px] truncate">{member1.id === currentUserId ? 'Kamu' : member1.name}</span>
+                </span>
+              )}
+              {member2 && (
+                <span className="flex items-center gap-1 text-[10px] text-slate-600 font-medium" title={member2.name}>
+                  <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
+                  <span className="max-w-[48px] truncate">{member2.id === currentUserId ? 'Kamu' : member2.name}</span>
+                </span>
+              )}
+            </div>
+          </div>
+
+          <p className="text-[11px] text-slate-400 mt-0.5">
+            {currentStreak > 0 ? (
+              <span className="text-amber-600 font-medium">🔥 {currentStreak} hari streak kompak</span>
+            ) : (
+              'Nabung bareng tiap hari untuk nyalakan streak!'
+            )}
+          </p>
         </div>
       </div>
 
