@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { sql } from '../_lib/db.js'
 import { signToken, setSessionCookie } from '../_lib/auth.js'
-import { ok, err, methodNotAllowed } from '../_lib/http.js'
+import { ok, err, methodNotAllowed, withErrorHandler } from '../_lib/http.js'
 
 const schema = z.object({
   name: z.string().min(2, 'Nama minimal 2 karakter.').max(60, 'Nama maksimal 60 karakter.'),
@@ -11,7 +11,7 @@ const schema = z.object({
   password: z.string().min(8, 'Password minimal 8 karakter.'),
 })
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST'])
 
   const parsed = schema.safeParse(req.body)
@@ -38,6 +38,8 @@ export default async function handler(req, res) {
   const token = await signToken({ sub: user.id, name: user.name })
   setSessionCookie(res, token)
 
-  ok(res, { user: { id: user.id, name: user.name, email: user.email } }, 201)
+  // User baru tidak punya couple → coupleId: null
+  ok(res, { user: { id: user.id, name: user.name, email: user.email, coupleId: null } }, 201)
 }
 
+export default withErrorHandler(handler)

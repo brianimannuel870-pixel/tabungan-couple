@@ -1,7 +1,7 @@
 // src/components/RouteGuard.jsx
 // Tiga jenis rute:
 //   "public"  — hanya untuk tamu (Login, Daftar); jika sudah login → redirect
-//   "auth"    — butuh login; jika belum → /login
+//   "auth"    — butuh login; jika belum → /login; jika sudah couple → /
 //   "couple"  — butuh login + couple; jika belum couple → /pairing
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.jsx'
@@ -25,6 +25,8 @@ export function AuthRoute({ children }) {
   const { user, loading } = useAuth()
   if (loading) return <Loading />
   if (!user) return <Navigate to="/login" replace />
+  // User sudah punya couple tidak perlu ada di /pairing
+  if (user.coupleId) return <Navigate to="/" replace />
   return children
 }
 
