@@ -24,9 +24,11 @@ export default function PwaInstallPrompt() {
       return
     }
 
-    // 3. Deteksi Safari iOS
+    // 3. Deteksi Safari iOS mobile nyata (iPhone/iPad/iPod dengan touch screen)
     const ua = window.navigator.userAgent.toLowerCase()
-    const isIosDevice = /iphone|ipad|ipod/.test(ua) && !/crios|fxios|opios/.test(ua)
+    const isIosDevice =
+      (/iphone|ipad|ipod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) &&
+      !/crios|fxios|opios/.test(ua)
     setIsIos(isIosDevice)
 
     // Tangkap event install standar (Chrome, Edge, Android)
@@ -39,9 +41,9 @@ export default function PwaInstallPrompt() {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
 
-    // Untuk iOS Safari, tampilkan prompt dengan panduan "Add to Home Screen"
+    // Untuk iOS Safari asli, tampilkan prompt
     if (isIosDevice) {
-      setTimeout(() => setShowPrompt(true), 1800)
+      setTimeout(() => setShowPrompt(true), 2000)
     }
 
     return () => {
@@ -78,7 +80,7 @@ export default function PwaInstallPrompt() {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-xs z-[80] animate-fade-in"
+        className="fixed inset-0 bg-black/50 backdrop-blur-xs z-[80] animate-fade-in touch-none"
         onClick={handleRemindLater}
         aria-hidden
       />

@@ -10,6 +10,15 @@ self.addEventListener('activate', (event) => {
 })
 
 self.addEventListener('fetch', (event) => {
-  // Biarkan fetch jaringan normal (network-first)
-  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)))
+  const url = new URL(event.request.url)
+
+  // JANGAN cache endpoint API, auth cookie, atau non-GET
+  if (url.pathname.startsWith('/api') || event.request.method !== 'GET') {
+    return
+  }
+
+  // Network-first untuk aset web umum
+  event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
+  )
 })
