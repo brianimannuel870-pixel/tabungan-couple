@@ -97,8 +97,14 @@ export default function DailySavingsCard({ deposits = [], members = [], currentU
     return map
   }, [weekDays, normalizedSetorDeposits, members])
 
-  // Hitung streak komitmen aktif (hari berturut-turut tabungan terisi hingga hari ini)
+  // Hitung streak komitmen bersama (HANYA bertambah jika KEDUA pasangan menabung di hari yang sama)
   const currentStreak = useMemo(() => {
+    const member1 = members[0]
+    const member2 = members[1]
+
+    // Jika belum punya pasangan atau belum ada 2 anggota, streak bersama belum aktif
+    if (!member1 || !member2) return 0
+
     let streak = 0
     const today = new Date()
 
@@ -107,18 +113,26 @@ export default function DailySavingsCard({ deposits = [], members = [], currentU
       const d = new Date(today)
       d.setDate(today.getDate() - i)
       const str = getLocalDateString(d)
-      const hasDeposit = normalizedSetorDeposits.some((dep) => dep.normalizedDate === str)
 
-      if (hasDeposit) {
+      // Cek apakah di tanggal ini KEDUA member menabung
+      const user1Saved = normalizedSetorDeposits.some(
+        (dep) => dep.normalizedDate === str && dep.userId === member1.id
+      )
+      const user2Saved = normalizedSetorDeposits.some(
+        (dep) => dep.normalizedDate === str && dep.userId === member2.id
+      )
+      const bothSaved = user1Saved && user2Saved
+
+      if (bothSaved) {
         streak++
       } else {
-        // Jika hari ini belum setor, jangan batalkan streak hari kemarin
+        // Jika hari ini belum lengkap keduanya menabung, jangan langsung gugurkan streak kemarin
         if (i === 0) continue
         break
       }
     }
     return streak
-  }, [normalizedSetorDeposits])
+  }, [normalizedSetorDeposits, members])
 
   const member1 = members[0]
   const member2 = members[1]
@@ -128,8 +142,10 @@ export default function DailySavingsCard({ deposits = [], members = [], currentU
       {/* Header Card */}
       <div className="flex items-center justify-between mb-3.5">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center">
-            <Flame size={18} className="fill-amber-500" />
+          <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition ${
+            currentStreak > 0 ? 'bg-amber-50 text-amber-500' : 'bg-slate-100 text-slate-400'
+          }`}>
+            <Flame size={18} className={currentStreak > 0 ? 'fill-amber-500' : ''} />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-slate-900 leading-tight">
@@ -137,9 +153,9 @@ export default function DailySavingsCard({ deposits = [], members = [], currentU
             </h3>
             <p className="text-[11px] text-slate-400">
               {currentStreak > 0 ? (
-                <span className="text-amber-600 font-medium">🔥 {currentStreak} hari streak tabungan</span>
+                <span className="text-amber-600 font-medium">🔥 {currentStreak} hari streak kompak</span>
               ) : (
-                'Yuk mulai rutinitas menabung!'
+                'Nabung bareng tiap hari untuk nyalakan streak!'
               )}
             </p>
           </div>
