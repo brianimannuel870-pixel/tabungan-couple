@@ -42,9 +42,9 @@ Kerjakan berurutan, satu tugas per waktu. Centang `[x]` setelah selesai dan meme
 - [x] 6.1 Beranda: total, ringkasan target, aktivitas terbaru
 - [x] 6.2 Bottom navigation + safe-area iOS
 - [x] 6.3 Skeleton loading, empty state, toast
-- [ ] 6.4 Uji menyeluruh Safari iOS & lebar 360–430px
-- [ ] 6.5 Uji otorisasi: user couple A tidak bisa akses data couple B
-- [ ] 6.6 Deploy Vercel + set env var
+- [x] 6.4 Uji menyeluruh Safari iOS & lebar 360–430px (checklist Safari selesai, format tanggal lokal aman)
+- [x] 6.5 Uji otorisasi & race condition: atomic couple/join, user couple A tidak bisa akses couple B
+- [x] 6.6 Deploy Vercel + set env var live di GitHub
 
 ## Backlog Tahap 2
 Milestone & animasi, pengingat setoran rutin, estimasi tercapai, export CSV/PDF, mode gelap, tema warna, konfirmasi setoran pasangan.
