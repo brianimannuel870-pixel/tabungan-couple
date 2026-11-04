@@ -1,10 +1,22 @@
 // src/pages/Profil.jsx
-import { useState } from 'react'
-import { Copy, Check, LogOut, Users, Loader2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Copy, Check, LogOut, Users, Loader2, Bell, BellRing, BellOff } from 'lucide-react'
+import { api } from '../lib/api.js'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { useData } from '../context/DataContext.jsx'
 import { formatTanggal } from '../lib/format.js'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const rawData = window.atob(base64)
+  const outputArray = new Uint8Array(rawData.length)
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i)
+  }
+  return outputArray
+}
 
 export default function Profil() {
   const { user, logout } = useAuth()
@@ -14,8 +26,75 @@ export default function Profil() {
   const [loggingOut, setLoggingOut] = useState(false)
   const [confirmLogout, setConfirmLogout] = useState(false)
 
+  // Push notification state
+  const [pushSupported, setPushSupported] = useState(false)
+  const [pushSubscribed, setPushSubscribed] = useState(false)
+  const [pushLoading, setPushLoading] = useState(false)
+  const [pushMessage, setPushMessage] = useState('')
+
   const loadingCouple = !isDataLoaded
   const errorCouple = globalError
+
+  // Cek status dukungan & langganan Web Push
+  useEffect(() => {
+    if ('serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window) {
+      setPushSupported(true)
+      navigator.serviceWorker.ready.then((reg) => {
+        reg.pushManager.getSubscription().then((sub) => {
+          setPushSubscribed(Boolean(sub))
+        })
+      })
+    }
+  }, [])
+
+  async function handleTogglePush() {
+    setPushMessage('')
+    setPushLoading(true)
+
+    try {
+      const reg = await navigator.serviceWorker.ready
+      const currentSub = await reg.pushManager.getSubscription()
+
+      if (currentSub) {
+        // Unsubscribe
+        await currentSub.unsubscribe()
+        await api.delete('/notifications/subscribe', { endpoint: currentSub.endpoint })
+        setPushSubscribed(false)
+        setPushMessage('Pengingat streak dinonaktifkan.')
+      } else {
+        // Subscribe
+        const permission = await Notification.requestPermission()
+        if (permission !== 'granted') {
+          throw new Error('Izin notifikasi ditolak oleh browser.')
+        }
+
+        const { publicKey } = await api.get('/notifications/vapid-public-key')
+        const convertedVapidKey = urlBase64ToUint8Array(publicKey)
+
+        const newSub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: convertedVapidKey,
+        })
+
+        const rawKey = newSub.getKey ? newSub.getKey('p256dh') : null
+        const rawAuth = newSub.getKey ? newSub.getKey('auth') : null
+        const p256dh = rawKey ? btoa(String.fromCharCode.apply(null, new Uint8Array(rawKey))) : ''
+        const auth = rawAuth ? btoa(String.fromCharCode.apply(null, new Uint8Array(rawAuth))) : ''
+
+        await api.post('/notifications/subscribe', {
+          endpoint: newSub.endpoint,
+          keys: { p256dh, auth },
+        })
+
+        setPushSubscribed(true)
+        setPushMessage('Pengingat streak berhasil diaktifkan!')
+      }
+    } catch (e) {
+      setPushMessage(e.message || 'Gagal mengubah pengaturan notifikasi.')
+    } finally {
+      setPushLoading(false)
+    }
+  }
 
   async function handleCopy() {
     if (!couple?.inviteCode) return
@@ -64,6 +143,47 @@ export default function Profil() {
             </div>
           </div>
         </div>
+
+        {/* Pengaturan Notifikasi Streak */}
+        {pushSupported && (
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                  pushSubscribed ? 'bg-amber-50 text-amber-500' : 'bg-slate-100 text-slate-400'
+                }`}>
+                  {pushSubscribed ? <BellRing size={20} /> : <Bell size={20} />}
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-slate-900 leading-tight">Pengingat Streak</h2>
+                  <p className="text-xs text-slate-400 mt-0.5">Ingatkan jika pasangan sudah menabung</p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleTogglePush}
+                disabled={pushLoading}
+                className={`h-9 px-3.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition active:scale-[0.98] ${
+                  pushSubscribed
+                    ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    : 'bg-rose-500 text-white hover:bg-rose-600 shadow-sm shadow-rose-200'
+                }`}
+              >
+                {pushLoading && <Loader2 size={13} className="animate-spin" />}
+                {pushSubscribed ? 'Aktif' : 'Aktifkan'}
+              </button>
+            </div>
+
+            {pushMessage && (
+              <p className={`text-xs mt-3 pt-2.5 border-t border-slate-100 ${
+                pushSubscribed ? 'text-emerald-600' : 'text-slate-500'
+              }`}>
+                {pushMessage}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Ruang Couple */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-4">
