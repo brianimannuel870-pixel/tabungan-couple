@@ -1,6 +1,6 @@
 // src/components/DepositSheet.jsx — modal bottom sheet setor / tarik dengan fixed header & footer
 import { useState, useEffect, useCallback } from 'react'
-import { X, Loader2, Calendar } from 'lucide-react'
+import { Loader2, Calendar } from 'lucide-react'
 import { api } from '../lib/api.js'
 import { formatRupiah, formatTanggal } from '../lib/format.js'
 import ConfirmDialog from './ConfirmDialog.jsx'
@@ -111,13 +111,13 @@ export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId })
         }`}
       >
         {/* Drag handle bar */}
-        <div className="pt-3 pb-1">
-          <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto" />
+        <div className="pt-3 pb-1" onClick={handleClose} role="button" aria-label="Tutup sheet">
+          <div className="w-10 h-1 bg-slate-200 hover:bg-slate-300 transition rounded-full mx-auto cursor-pointer" />
         </div>
 
-        {/* 1. Header Fixed Top: Tab Setor & Tarik + Tombol Tutup */}
-        <div className="px-6 py-3 border-b border-slate-100 flex items-center gap-3 shrink-0 bg-white">
-          <div className="flex-1 flex bg-slate-100 rounded-xl p-1">
+        {/* 1. Header Fixed Top: Tab Setor & Tarik Penuh */}
+        <div className="px-6 py-2.5 border-b border-slate-100 flex items-center shrink-0 bg-white">
+          <div className="w-full flex bg-slate-100 rounded-xl p-1">
             {['setor', 'tarik'].map((t) => (
               <button
                 key={t}
@@ -135,15 +135,6 @@ export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId })
               </button>
             ))}
           </div>
-
-          <button
-            type="button"
-            onClick={handleClose}
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 transition shrink-0"
-            aria-label="Tutup"
-          >
-            <X size={20} />
-          </button>
         </div>
 
         {/* 2. Scrollable Body: Form Input Fields */}
