@@ -158,7 +158,7 @@ export default function Profil() {
         variant="danger"
         loading={loggingOut}
         onConfirm={handleLogout}
-        onCancel={() => setConfirmLogout(false)}
+        onCancel={() => !loggingOut && setConfirmLogout(false)}
       />
     </div>
   )

@@ -27,12 +27,14 @@ export default function GoalFormSheet({ goal, onClose, onSave }) {
     }, 200)
   }, [onClose])
 
-  // Tutup dengan Escape
+  // Tutup dengan Escape (hanya jika dialog konfirmasi tidak aktif dan tidak sedang loading)
   useEffect(() => {
-    function onKey(e) { if (e.key === 'Escape') handleClose() }
+    function onKey(e) {
+      if (e.key === 'Escape' && !loading && !showConfirm) handleClose()
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [handleClose])
+  }, [handleClose, loading, showConfirm])
 
   function handleChange(e) {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }))

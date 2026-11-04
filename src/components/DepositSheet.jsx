@@ -41,10 +41,12 @@ export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId })
   }, [onClose])
 
   useEffect(() => {
-    function onKey(e) { if (e.key === 'Escape') handleClose() }
+    function onKey(e) {
+      if (e.key === 'Escape' && !loading && !showConfirm) handleClose()
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [handleClose])
+  }, [handleClose, loading, showConfirm])
 
   function handleChange(e) {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
