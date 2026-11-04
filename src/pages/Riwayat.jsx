@@ -1,5 +1,5 @@
 // src/pages/Riwayat.jsx — riwayat transaksi dengan filter + pagination (10 per halaman)
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Loader2, History, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { api } from '../lib/api.js'
 import { useAuth } from '../hooks/useAuth.jsx'
@@ -52,23 +52,46 @@ function DepositItem({ deposit, currentUserId, onRequestDelete }) {
 
 export default function Riwayat() {
   const { user } = useAuth()
-  const { goals, couple, handleDepositSaved } = useData()
+  const { goals, couple, initialHistory, setInitialHistory, handleDepositSaved } = useData()
   const members = couple?.members ?? []
-
-  const [deposits, setDeposits] = useState([])
-  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, hasNext: false, hasPrev: false })
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [deleteTarget, setDeleteTarget] = useState(null)
-  const [deleting, setDeleting] = useState(false)
 
   // Filter & Page
   const [filterGoal, setFilterGoal] = useState('')
   const [filterUser, setFilterUser] = useState('')
   const [page, setPage] = useState(1)
 
-  // Load deposits setiap filter atau page berubah
+  // Ambil state awal langsung dari prefetch cache jika default (page 1, tanpa filter)
+  const isDefaultView = page === 1 && !filterGoal && !filterUser
+
+  const [deposits, setDeposits] = useState(() => (isDefaultView && initialHistory.loaded ? initialHistory.deposits : []))
+  const [pagination, setPagination] = useState(() => (isDefaultView && initialHistory.loaded ? initialHistory.pagination : { page: 1, totalPages: 1, total: 0, hasNext: false, hasPrev: false }))
+  const [loading, setLoading] = useState(() => !(isDefaultView && initialHistory.loaded))
+  const [error, setError] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+
+  // Flag untuk mendeteksi render pertama
+  const isFirstMount = useRef(true)
+
+  // Sinkronkan state lokal jika cache global ter-update dari luar (misal: habis setor lewat FAB)
+  useEffect(() => {
+    if (isDefaultView && initialHistory.loaded) {
+      setDeposits(initialHistory.deposits)
+      setPagination(initialHistory.pagination)
+      setLoading(false)
+    }
+  }, [initialHistory, isDefaultView])
+
+  // Load deposits setiap filter atau page berubah (kecuali render awal yang sudah punya cache)
   const loadDeposits = useCallback(async () => {
+    // Jika render awal dan data default sudah ada dari prefetch cache, jangan panggil fetch kedua
+    if (isFirstMount.current) {
+      isFirstMount.current = false
+      if (page === 1 && !filterGoal && !filterUser && initialHistory.loaded) {
+        return
+      }
+    }
+
     setLoading(true)
     setError('')
     try {
@@ -77,14 +100,26 @@ export default function Riwayat() {
       if (filterUser) params.append('userId', filterUser)
 
       const data = await api.get(`/deposits?${params.toString()}`)
-      setDeposits(data.deposits ?? [])
-      if (data.pagination) setPagination(data.pagination)
+      const fetchedDeposits = data.deposits ?? []
+      const fetchedPagination = data.pagination ?? { page: 1, totalPages: 1, total: 0, hasNext: false, hasPrev: false }
+
+      setDeposits(fetchedDeposits)
+      setPagination(fetchedPagination)
+
+      // Simpan ke cache jika ini default view
+      if (page === 1 && !filterGoal && !filterUser) {
+        setInitialHistory({
+          deposits: fetchedDeposits,
+          pagination: fetchedPagination,
+          loaded: true,
+        })
+      }
     } catch (e) {
       setError(e.message)
     } finally {
       setLoading(false)
     }
-  }, [page, filterGoal, filterUser])
+  }, [page, filterGoal, filterUser, initialHistory.loaded, setInitialHistory])
 
   useEffect(() => {
     loadDeposits()

@@ -11,16 +11,27 @@ export function DataProvider({ children }) {
   const [goals, setGoals] = useState([])
   const [couple, setCouple] = useState(null)
   const [recentDeposits, setRecentDeposits] = useState([])
+  // Cache data riwayat halaman pertama default (all filter, page 1)
+  const [initialHistory, setInitialHistory] = useState({
+    deposits: [],
+    pagination: { page: 1, totalPages: 1, total: 0, hasNext: false, hasPrev: false },
+    loaded: false,
+  })
   const [initialLoading, setInitialLoading] = useState(false)
   const [isDataLoaded, setIsDataLoaded] = useState(false)
   const [error, setError] = useState('')
 
-  // Prefetch seluruh data inti saat user terautentikasi dan memiliki couple
+  // Prefetch seluruh data inti saat user login & ada couple
   const refreshAllData = useCallback(async (showLoader = false) => {
     if (!user?.coupleId) {
       setGoals([])
       setCouple(null)
       setRecentDeposits([])
+      setInitialHistory({
+        deposits: [],
+        pagination: { page: 1, totalPages: 1, total: 0, hasNext: false, hasPrev: false },
+        loaded: false,
+      })
       setIsDataLoaded(false)
       setError('')
       return
@@ -33,11 +44,16 @@ export function DataProvider({ children }) {
       const [gData, cData, dData] = await Promise.all([
         api.get('/goals'),
         api.get('/couple'),
-        api.get('/deposits?limit=10'),
+        api.get('/deposits?page=1&limit=10'),
       ])
       setGoals(gData.goals ?? [])
       setCouple(cData.couple ?? null)
       setRecentDeposits(dData.deposits ?? [])
+      setInitialHistory({
+        deposits: dData.deposits ?? [],
+        pagination: dData.pagination ?? { page: 1, totalPages: 1, total: 0, hasNext: false, hasPrev: false },
+        loaded: true,
+      })
       setIsDataLoaded(true)
     } catch (e) {
       setError(e.message || 'Gagal memuat data tabungan.')
@@ -54,6 +70,11 @@ export function DataProvider({ children }) {
       setGoals([])
       setCouple(null)
       setRecentDeposits([])
+      setInitialHistory({
+        deposits: [],
+        pagination: { page: 1, totalPages: 1, total: 0, hasNext: false, hasPrev: false },
+        loaded: false,
+      })
       setIsDataLoaded(false)
       setError('')
     }
@@ -64,7 +85,14 @@ export function DataProvider({ children }) {
     Promise.all([
       api.get('/goals').then((d) => setGoals(d.goals ?? [])).catch(() => {}),
       api.get('/couple').then((d) => setCouple(d.couple ?? null)).catch(() => {}),
-      api.get('/deposits?limit=10').then((d) => setRecentDeposits(d.deposits ?? [])).catch(() => {}),
+      api.get('/deposits?page=1&limit=10').then((d) => {
+        setRecentDeposits(d.deposits ?? [])
+        setInitialHistory({
+          deposits: d.deposits ?? [],
+          pagination: d.pagination ?? { page: 1, totalPages: 1, total: 0, hasNext: false, hasPrev: false },
+          loaded: true,
+        })
+      }).catch(() => {}),
     ])
   }, [])
 
@@ -73,7 +101,14 @@ export function DataProvider({ children }) {
     Promise.all([
       api.get('/goals').then((d) => setGoals(d.goals ?? [])).catch(() => {}),
       api.get('/couple').then((d) => setCouple(d.couple ?? null)).catch(() => {}),
-      api.get('/deposits?limit=10').then((d) => setRecentDeposits(d.deposits ?? [])).catch(() => {}),
+      api.get('/deposits?page=1&limit=10').then((d) => {
+        setRecentDeposits(d.deposits ?? [])
+        setInitialHistory({
+          deposits: d.deposits ?? [],
+          pagination: d.pagination ?? { page: 1, totalPages: 1, total: 0, hasNext: false, hasPrev: false },
+          loaded: true,
+        })
+      }).catch(() => {}),
     ])
   }, [])
 
@@ -87,6 +122,8 @@ export function DataProvider({ children }) {
         goals,
         couple,
         recentDeposits,
+        initialHistory,
+        setInitialHistory,
         initialLoading,
         isDataLoaded,
         error,
