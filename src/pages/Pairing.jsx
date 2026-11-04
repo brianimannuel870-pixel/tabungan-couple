@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Heart, Loader2 } from 'lucide-react'
 import { api } from '../lib/api.js'
 import { useAuth } from '../hooks/useAuth.jsx'
+import ConfirmDialog from '../components/ConfirmDialog.jsx'
 
 export default function Pairing() {
   const { user } = useAuth()
@@ -11,8 +12,24 @@ export default function Pairing() {
   const [kode, setKode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [confirmState, setConfirmState] = useState(null) // null | 'buat' | 'gabung'
 
-  async function handleBuat() {
+  function handleBuatClick() {
+    setError('')
+    setConfirmState('buat')
+  }
+
+  function handleGabungSubmit(e) {
+    e.preventDefault()
+    setError('')
+    if (kode.trim().length !== 6) {
+      setError('Kode harus 6 karakter.')
+      return
+    }
+    setConfirmState('gabung')
+  }
+
+  async function executeBuat() {
     setError('')
     setLoading(true)
     try {
@@ -21,24 +38,21 @@ export default function Pairing() {
       window.location.replace('/')
     } catch (e) {
       setError(e.message)
+      setConfirmState(null)
     } finally {
       setLoading(false)
     }
   }
 
-  async function handleGabung(e) {
-    e.preventDefault()
+  async function executeGabung() {
     setError('')
-    if (kode.trim().length !== 6) {
-      setError('Kode harus 6 karakter.')
-      return
-    }
     setLoading(true)
     try {
       await api.post('/couple/join', { inviteCode: kode.trim().toUpperCase() })
       window.location.replace('/')
     } catch (e) {
       setError(e.message)
+      setConfirmState(null)
     } finally {
       setLoading(false)
     }
@@ -89,7 +103,7 @@ export default function Pairing() {
                 Buat Ruang Couple baru dan bagikan kode undangan ke pasanganmu.
               </p>
               <button
-                onClick={handleBuat}
+                onClick={handleBuatClick}
                 disabled={loading}
                 className="h-12 rounded-xl bg-rose-500 text-white font-medium flex items-center justify-center gap-2 active:scale-[0.98] transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
@@ -98,7 +112,7 @@ export default function Pairing() {
               </button>
             </div>
           ) : (
-            <form onSubmit={handleGabung} className="flex flex-col gap-4">
+            <form onSubmit={handleGabungSubmit} className="flex flex-col gap-4">
               <p className="text-sm text-slate-500 text-center">
                 Minta kode 6 karakter dari pasanganmu.
               </p>
@@ -135,6 +149,28 @@ export default function Pairing() {
           Satu akun hanya bisa bergabung di satu Ruang Couple.
         </p>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmState === 'buat'}
+        title="Buat Ruang Couple?"
+        message="Kamu akan menjadi pemilik Ruang Couple ini dan mendapatkan kode undangan untuk dibagikan ke pasangan."
+        confirmText="Ya, Buat"
+        variant="primary"
+        loading={loading}
+        onConfirm={executeBuat}
+        onCancel={() => !loading && setConfirmState(null)}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmState === 'gabung'}
+        title="Gabung Ruang Couple?"
+        message={`Kamu akan bergabung ke Ruang Couple dengan kode "${kode.trim().toUpperCase()}". Satu akun hanya bisa terhubung ke satu pasangan.`}
+        confirmText="Ya, Gabung"
+        variant="primary"
+        loading={loading}
+        onConfirm={executeGabung}
+        onCancel={() => !loading && setConfirmState(null)}
+      />
     </div>
   )
 }

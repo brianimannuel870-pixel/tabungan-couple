@@ -1,6 +1,8 @@
 // src/components/GoalFormSheet.jsx — bottom sheet buat/ubah target dengan animasi buka & tutup
 import { useState, useEffect, useCallback } from 'react'
 import { X, Loader2 } from 'lucide-react'
+import { formatRupiah } from '../lib/format.js'
+import ConfirmDialog from './ConfirmDialog.jsx'
 
 const EMOJI_OPTIONS = ['🎯','🏠','✈️','💍','🎓','🚗','📱','👶','🐶','🌴','💰','🎮']
 
@@ -16,6 +18,7 @@ export default function GoalFormSheet({ goal, onClose, onSave }) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const handleClose = useCallback(() => {
     setIsClosing(true)
@@ -35,7 +38,7 @@ export default function GoalFormSheet({ goal, onClose, onSave }) {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
   }
 
-  async function handleSubmit(e) {
+  function handleSubmit(e) {
     e.preventDefault()
     setError('')
 
@@ -43,6 +46,11 @@ export default function GoalFormSheet({ goal, onClose, onSave }) {
     if (!form.name.trim()) return setError('Nama target wajib diisi.')
     if (!amount || amount <= 0) return setError('Nominal target harus lebih dari 0.')
 
+    setShowConfirm(true)
+  }
+
+  async function handleExecuteSave() {
+    const amount = parseInt(form.targetAmount.replace(/\D/g, ''), 10)
     setLoading(true)
     try {
       await onSave({
@@ -51,9 +59,12 @@ export default function GoalFormSheet({ goal, onClose, onSave }) {
         deadline: form.deadline || null,
         icon: form.icon || null,
       })
+      setShowConfirm(false)
       handleClose()
     } catch (e) {
       setError(e.message)
+      setShowConfirm(false)
+    } finally {
       setLoading(false)
     }
   }
@@ -190,6 +201,22 @@ export default function GoalFormSheet({ goal, onClose, onSave }) {
           </button>
         </form>
       </div>
+
+      {/* Dialog konfirmasi simpan target */}
+      <ConfirmDialog
+        isOpen={showConfirm}
+        title={isEdit ? 'Simpan Perubahan Target?' : 'Buat Target Baru?'}
+        message={
+          isEdit
+            ? `Simpan perubahan target "${form.name.trim()}" dengan nominal ${formatRupiah(parseInt(form.targetAmount || '0', 10))}?`
+            : `Buat target "${form.name.trim()}" dengan target tabungan ${formatRupiah(parseInt(form.targetAmount || '0', 10))}?`
+        }
+        confirmText={isEdit ? 'Ya, Simpan' : 'Ya, Buat'}
+        variant="primary"
+        loading={loading}
+        onConfirm={handleExecuteSave}
+        onCancel={() => !loading && setShowConfirm(false)}
+      />
     </>
   )
 }

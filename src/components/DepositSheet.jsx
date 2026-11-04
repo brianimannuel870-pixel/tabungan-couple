@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { X, Loader2, Calendar } from 'lucide-react'
 import { api } from '../lib/api.js'
 import { formatRupiah, formatTanggal } from '../lib/format.js'
+import ConfirmDialog from './ConfirmDialog.jsx'
 
 // Dapatkan string tanggal lokal YYYY-MM-DD (bukan UTC)
 function getTodayLocalDate() {
@@ -25,6 +26,7 @@ export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   // Pastikan tanggal selalu ter-update ke real-time hari ini saat modal terbuka
   useEffect(() => {
@@ -48,7 +50,7 @@ export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId })
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
   }
 
-  async function handleSubmit(e) {
+  function handleSubmit(e) {
     e.preventDefault()
     setError('')
 
@@ -56,6 +58,11 @@ export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId })
     if (!form.goalId) return setError('Pilih target tabungan.')
     if (!amount || amount <= 0) return setError('Nominal harus lebih dari 0.')
 
+    setShowConfirm(true)
+  }
+
+  async function handleExecuteSubmit() {
+    const amount = parseInt(form.amount.replace(/\D/g, ''), 10)
     setLoading(true)
     try {
       const data = await api.post('/deposits', {
@@ -65,6 +72,7 @@ export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId })
         note: form.note.trim() || null,
         occurredOn: form.occurredOn || todayStr,
       })
+      setShowConfirm(false)
       try {
         onSaved?.(data.deposit)
       } finally {
@@ -72,6 +80,8 @@ export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId })
       }
     } catch (e) {
       setError(e.message)
+      setShowConfirm(false)
+    } finally {
       setLoading(false)
     }
   }
@@ -249,6 +259,18 @@ export default function DepositSheet({ goals, onClose, onSaved, defaultGoalId })
           </button>
         </form>
       </div>
+
+      {/* Dialog konfirmasi simpan transaksi */}
+      <ConfirmDialog
+        isOpen={showConfirm}
+        title={tab === 'setor' ? 'Konfirmasi Setoran' : 'Konfirmasi Penarikan'}
+        message={`Catat ${tab === 'setor' ? 'setoran' : 'penarikan'} sebesar ${formatRupiah(parseInt(form.amount || '0', 10))} untuk target "${selectedGoal?.name ?? ''}"?`}
+        confirmText={tab === 'setor' ? 'Ya, Setor' : 'Ya, Tarik'}
+        variant="primary"
+        loading={loading}
+        onConfirm={handleExecuteSubmit}
+        onCancel={() => !loading && setShowConfirm(false)}
+      />
     </>
   )
 }

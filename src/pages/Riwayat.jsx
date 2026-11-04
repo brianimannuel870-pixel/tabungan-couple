@@ -4,23 +4,11 @@ import { Loader2, History, Trash2, ChevronLeft, ChevronRight } from 'lucide-reac
 import { api } from '../lib/api.js'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { formatRupiah, formatTanggalPendek } from '../lib/format.js'
+import ConfirmDialog from '../components/ConfirmDialog.jsx'
 
-function DepositItem({ deposit, currentUserId, onDelete }) {
+function DepositItem({ deposit, currentUserId, onRequestDelete }) {
   const isSetor = deposit.type === 'setor'
   const isMine = deposit.userId === currentUserId
-  const [confirming, setConfirming] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-
-  async function handleDelete() {
-    setDeleting(true)
-    try {
-      await api.delete(`/deposits/${deposit.id}`)
-      onDelete(deposit.id)
-    } catch (e) {
-      alert(e.message)
-      setDeleting(false)
-    }
-  }
 
   return (
     <div className="flex items-center gap-3 py-3 border-b border-slate-100 last:border-0">
@@ -47,22 +35,13 @@ function DepositItem({ deposit, currentUserId, onDelete }) {
         <span className={`text-sm font-semibold tabular-nums ${isSetor ? 'text-emerald-600' : 'text-red-500'}`}>
           {isSetor ? '+' : '−'}{formatRupiah(deposit.amount)}
         </span>
-        {isMine && !confirming && (
+        {isMine && (
           <button
-            onClick={() => setConfirming(true)}
+            onClick={() => onRequestDelete(deposit)}
             className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-red-400 hover:bg-red-50 transition"
             aria-label="Hapus catatan"
           >
             <Trash2 size={14} />
-          </button>
-        )}
-        {isMine && confirming && (
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="text-xs text-red-500 font-medium px-2 py-1 rounded-lg bg-red-50 active:scale-95 transition"
-          >
-            {deleting ? '…' : 'Hapus?'}
           </button>
         )}
       </div>
@@ -78,6 +57,8 @@ export default function Riwayat() {
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, hasNext: false, hasPrev: false })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   // Filter & Page
   const [filterGoal, setFilterGoal] = useState('')
@@ -135,6 +116,20 @@ export default function Riwayat() {
       setPage((p) => p - 1)
     } else {
       loadDeposits()
+    }
+  }
+
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      await api.delete(`/deposits/${deleteTarget.id}`)
+      handleDelete(deleteTarget.id)
+      setDeleteTarget(null)
+    } catch (e) {
+      alert(e.message)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -199,7 +194,7 @@ export default function Riwayat() {
                   key={d.id}
                   deposit={d}
                   currentUserId={user?.id}
-                  onDelete={handleDelete}
+                  onRequestDelete={(deposit) => setDeleteTarget(deposit)}
                 />
               ))}
             </div>
@@ -231,6 +226,21 @@ export default function Riwayat() {
           </>
         )}
       </div>
+
+      <ConfirmDialog
+        isOpen={Boolean(deleteTarget)}
+        title="Hapus Catatan Transaksi?"
+        message={
+          deleteTarget
+            ? `Hapus transaksi ${deleteTarget.type === 'setor' ? 'setoran' : 'penarikan'} sebesar ${formatRupiah(deleteTarget.amount)}? Saldo target akan otomatis disesuaikan.`
+            : ''
+        }
+        confirmText="Ya, Hapus"
+        variant="danger"
+        loading={deleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => !deleting && setDeleteTarget(null)}
+      />
     </div>
   )
 }

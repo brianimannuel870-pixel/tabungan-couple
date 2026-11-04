@@ -4,6 +4,7 @@ import { Copy, Check, LogOut, Users, Loader2 } from 'lucide-react'
 import { api } from '../lib/api.js'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { formatTanggal } from '../lib/format.js'
+import ConfirmDialog from '../components/ConfirmDialog.jsx'
 
 export default function Profil() {
   const { user, logout } = useAuth()
@@ -12,6 +13,7 @@ export default function Profil() {
   const [errorCouple, setErrorCouple] = useState('')
   const [copied, setCopied] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+  const [confirmLogout, setConfirmLogout] = useState(false)
 
   useEffect(() => {
     api.get('/couple')
@@ -27,7 +29,7 @@ export default function Profil() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      // Fallback untuk Safari lama
+      // Fallback untuk browser lama
       const el = document.createElement('textarea')
       el.value = couple.inviteCode
       document.body.appendChild(el)
@@ -46,6 +48,7 @@ export default function Profil() {
       window.location.replace('/login')
     } finally {
       setLoggingOut(false)
+      setConfirmLogout(false)
     }
   }
 
@@ -133,7 +136,7 @@ export default function Profil() {
 
         {/* Logout */}
         <button
-          onClick={handleLogout}
+          onClick={() => setConfirmLogout(true)}
           disabled={loggingOut}
           className="w-full h-12 rounded-xl border border-slate-200 bg-white text-red-500 font-medium flex items-center justify-center gap-2 active:scale-[0.98] transition disabled:opacity-60"
         >
@@ -144,7 +147,19 @@ export default function Profil() {
           {loggingOut ? 'Keluar…' : 'Keluar'}
         </button>
       </div>
+
+      {/* Dialog Konfirmasi Logout */}
+      <ConfirmDialog
+        isOpen={confirmLogout}
+        title="Keluar dari Akun?"
+        message="Kamu harus memasukkan email dan password lagi untuk masuk kembali."
+        confirmText="Ya, Keluar"
+        cancelText="Batal"
+        variant="danger"
+        loading={loggingOut}
+        onConfirm={handleLogout}
+        onCancel={() => setConfirmLogout(false)}
+      />
     </div>
   )
 }
-

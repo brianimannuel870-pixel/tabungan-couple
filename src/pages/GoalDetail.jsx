@@ -7,6 +7,7 @@ import { useAuth } from '../hooks/useAuth.jsx'
 import { formatRupiah, formatTanggal, formatTanggalPendek } from '../lib/format.js'
 import ProgressBar from '../components/ProgressBar.jsx'
 import GoalFormSheet from '../components/GoalFormSheet.jsx'
+import ConfirmDialog from '../components/ConfirmDialog.jsx'
 
 function TransactionItem({ deposit }) {
   const isSetor = deposit.type === 'setor'
@@ -219,33 +220,16 @@ export default function GoalDetail({ onGoalUpdated }) {
       )}
 
       {/* Konfirmasi hapus */}
-      {confirmDelete && (
-        <>
-          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => !deleting && setConfirmDelete(false)} />
-          <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl p-6 shadow-xl max-w-sm mx-auto">
-            <h3 className="text-base font-semibold text-slate-900 mb-2">Hapus Target?</h3>
-            <p className="text-sm text-slate-500 mb-5">
-              Semua catatan setoran di target ini akan ikut terhapus. Tindakan ini tidak bisa dibatalkan.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setConfirmDelete(false)}
-                className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-700 text-sm font-medium active:scale-[0.98] transition"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="flex-1 h-11 rounded-xl bg-red-500 text-white text-sm font-medium flex items-center justify-center gap-2 active:scale-[0.98] transition disabled:opacity-60"
-              >
-                {deleting && <Loader2 size={16} className="animate-spin" />}
-                {deleting ? 'Menghapus…' : 'Hapus'}
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+      <ConfirmDialog
+        isOpen={confirmDelete}
+        title="Hapus Target?"
+        message="Semua catatan setoran di target ini akan ikut terhapus. Tindakan ini tidak bisa dibatalkan."
+        confirmText="Ya, Hapus"
+        variant="danger"
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => !deleting && setConfirmDelete(false)}
+      />
     </div>
   )
 }
