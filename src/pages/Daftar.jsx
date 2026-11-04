@@ -1,7 +1,7 @@
 // src/pages/Daftar.jsx
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { PiggyBank, Loader2 } from 'lucide-react'
+import { PiggyBank, Loader2, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth.jsx'
 
 export default function Daftar() {
@@ -9,6 +9,7 @@ export default function Daftar() {
   const navigate = useNavigate()
 
   const [form, setForm] = useState({ name: '', email: '', password: '' })
+  const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState({})
   const [apiError, setApiError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -106,17 +107,27 @@ export default function Daftar() {
             <label htmlFor="password" className="text-sm font-medium text-slate-700">
               Password
             </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              required
-              value={form.password}
-              onChange={handleChange}
-              placeholder="Minimal 8 karakter"
-              className="h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="new-password"
+                required
+                value={form.password}
+                onChange={handleChange}
+                placeholder="Minimal 8 karakter"
+                className="h-12 pl-4 pr-12 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent w-full"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 focus:outline-none"
+                aria-label={showPassword ? 'Sembunyikan password' : 'Lihat password'}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
             {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
           </div>
 
