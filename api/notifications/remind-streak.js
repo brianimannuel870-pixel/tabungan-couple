@@ -15,6 +15,14 @@ webpush.setVapidDetails(
   privateKey
 )
 
+// Ambil tanggal YYYY-MM-DD dalam zona waktu Indonesia (WIB / UTC+7)
+function getWibDateString() {
+  const d = new Date()
+  // Tambah 7 jam dari UTC
+  const wibTime = new Date(d.getTime() + 7 * 60 * 60 * 1000)
+  return wibTime.toISOString().split('T')[0]
+}
+
 async function handler(req, res) {
   // Verifikasi otorisasi Cron atau admin via CRON_SECRET (jika tersedia di Vercel)
   const authHeader = req.headers['authorization']
@@ -22,7 +30,7 @@ async function handler(req, res) {
     return err(res, 'Tidak diizinkan.', 401)
   }
 
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = getWibDateString()
 
   // Cari semua couple yang memiliki 2 anggota
   const couples = await sql`
@@ -38,7 +46,7 @@ async function handler(req, res) {
   for (const couple of couples) {
     const [user1Id, user2Id] = couple.members
 
-    // Cek siapa yang sudah setor hari ini
+    // Cek siapa yang sudah setor hari ini (berdasarkan tanggal WIB)
     const todayDeposits = await sql`
       SELECT DISTINCT d.user_id, u.name
       FROM deposits d
@@ -92,7 +100,7 @@ async function handler(req, res) {
 
   return ok(res, {
     message: `Pengecekan streak selesai. ${notifiedCount} pengingat terkirim.`,
-    today: todayStr,
+    todayWib: todayStr,
   })
 }
 
