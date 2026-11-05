@@ -1,6 +1,6 @@
 // src/pages/Beranda.jsx — total tabungan, kalender mingguan, progress bar kontribusi, ringkasan target, 10 aktivitas
 import { Link } from 'react-router-dom'
-import { PiggyBank, ChevronRight } from 'lucide-react'
+import { PiggyBank, ChevronRight, RefreshCw } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { useData } from '../context/DataContext.jsx'
 import { formatRupiah, formatTanggalPendek } from '../lib/format.js'
@@ -24,7 +24,7 @@ function SkeletonCard() {
 
 export default function Beranda() {
   const { user } = useAuth()
-  const { goals, couple, recentDeposits, calendarDeposits, isDataLoaded, error } = useData()
+  const { goals, couple, recentDeposits, calendarDeposits, isDataLoaded, isSyncing, refreshAllData, error } = useData()
 
   const members = couple?.members ?? []
   const deposits = recentDeposits ?? []
@@ -56,16 +56,28 @@ export default function Beranda() {
     <div className="min-h-[100dvh] bg-slate-50 pb-28">
       <div className="mx-auto w-full max-w-md px-4 pt-8">
 
-        {/* Greeting */}
+        {/* Greeting + Tombol Sinkronisasi / Refresh */}
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-500 font-semibold shrink-0">
             {user?.name?.[0]?.toUpperCase()}
           </div>
-          <div>
-            <p className="text-sm text-slate-500">Hei, {user?.name}!</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-slate-800 truncate">Hei, {user?.name}!</p>
             <p className="text-xs text-slate-400">Yuk cek tabungan kalian hari ini.</p>
           </div>
-          <PiggyBank size={24} className="ml-auto text-rose-400" strokeWidth={1.75} />
+          
+          {/* Tombol Refresh / Sinkronisasi */}
+          <button
+            type="button"
+            onClick={() => refreshAllData()}
+            disabled={isSyncing}
+            className="h-9 px-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-rose-500 hover:border-rose-200 active:scale-[0.95] transition flex items-center gap-1.5 shrink-0 shadow-xs disabled:opacity-60"
+            title="Tarik data terbaru dari pasangan"
+            aria-label="Sinkronisasi data"
+          >
+            <RefreshCw size={15} className={`text-rose-500 ${isSyncing ? 'animate-spin' : ''}`} />
+            <span className="text-xs font-semibold">{isSyncing ? 'Sinkron…' : 'Sinkron'}</span>
+          </button>
         </div>
 
         {/* Total tabungan + Kontribusi terintegrasi */}

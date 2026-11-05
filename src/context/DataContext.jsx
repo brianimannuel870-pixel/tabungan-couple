@@ -20,6 +20,7 @@ export function DataProvider({ children }) {
     loaded: false,
   })
   const [isDataLoaded, setIsDataLoaded] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
   const [error, setError] = useState('')
 
   // Prefetch seluruh data inti saat user login & ada couple
@@ -39,6 +40,7 @@ export function DataProvider({ children }) {
       return
     }
 
+    setIsSyncing(true)
     setError('')
 
     try {
@@ -60,6 +62,8 @@ export function DataProvider({ children }) {
       setIsDataLoaded(true)
     } catch (e) {
       setError(e.message || 'Gagal memuat data tabungan.')
+    } finally {
+      setIsSyncing(false)
     }
   }, [user?.coupleId])
 
@@ -79,6 +83,23 @@ export function DataProvider({ children }) {
       })
       setIsDataLoaded(false)
       setError('')
+    }
+  }, [user?.coupleId, isDataLoaded, refreshAllData])
+
+  // Auto-refresh saat user kembali ke tab/layar aplikasi (Visibility API & Window Focus)
+  useEffect(() => {
+    function handleVisibilityOrFocus() {
+      if (document.visibilityState === 'visible' && user?.coupleId && isDataLoaded) {
+        refreshAllData()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus)
+    window.addEventListener('focus', handleVisibilityOrFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus)
+      window.removeEventListener('focus', handleVisibilityOrFocus)
     }
   }, [user?.coupleId, isDataLoaded, refreshAllData])
 
@@ -134,6 +155,7 @@ export function DataProvider({ children }) {
         initialHistory,
         setInitialHistory,
         isDataLoaded,
+        isSyncing,
         error,
         refreshAllData,
         updateGoals,
